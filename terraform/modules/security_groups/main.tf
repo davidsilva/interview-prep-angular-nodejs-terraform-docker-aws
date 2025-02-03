@@ -118,10 +118,19 @@ resource "aws_security_group" "lambda_sg" {
     vpc_id = var.vpc_id
 
     egress {
-        from_port = 0
-        to_port = 0
-        protocol = "-1"
+        from_port = 443
+        to_port = 443
+        protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+        description = "Allow outbound HTTPS traffic for SSM access"
+    }
+
+    egress {
+        from_port = 5432
+        to_port = 5432
+        protocol = "tcp"
+        security_groups = [aws_security_group.db_sg.id]
+        description = "Allow outbound traffic to RDS"
     }
 
     tags = {
@@ -162,6 +171,7 @@ resource "aws_security_group_rule" "allow_lambda_to_db" {
     protocol = "tcp"
     source_security_group_id = aws_security_group.lambda_sg.id
     security_group_id = aws_security_group.db_sg.id
+    description = "Allow Lambda function to access the db"
 }
 
 resource "aws_security_group_rule" "allow_bastion_to_db" {
@@ -171,4 +181,14 @@ resource "aws_security_group_rule" "allow_bastion_to_db" {
     protocol = "tcp"
     source_security_group_id = aws_security_group.bastion_sg.id
     security_group_id = aws_security_group.db_sg.id
+}
+
+resource "aws_security_group_rule" "allow_backend_to_db" {
+    type = "ingress"
+    from_port = 5432
+    to_port = 5432
+    protocol = "tcp"
+    source_security_group_id = aws_security_group.backend_sg.id
+    security_group_id = aws_security_group.db_sg.id
+    description = "Allow backend to access the db"
 }

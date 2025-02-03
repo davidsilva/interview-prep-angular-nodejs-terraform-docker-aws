@@ -117,12 +117,13 @@ A lot of `ci.yml` is self-explanatory but here are some notes to help clarify so
   * Does an install and build for the Lambda function.
   * And finally zips up everything.
 * **Update Lambda migration function**: Updates the AWS Lambda function code for database migrations using the AWS CLI. The workflow waits for the update to be completed before the function is invoked.
+* **Build and push frontend Docker image**: Note that this step uses a Dockerfile in the root of the project, rather than the Dockerfile in the frontend directory. I wanted to keep the Dockerfile in the frontend directory for local development purposes, e.g., `frontend/Dockerfile` uses the Angular server and port 4200.
 
 ## Infrastructure
 
 ![Infrastructure Diagram](images/Interview-Prep-Infrastructure-v2.drawio.png)
 
-The diagram above illustrates the major parts of the application infrastructure:
+The diagram above illustrates the major parts of the application infrastructure. Here are some descriptions and notes:
 
 * **Interview Prep VPC**: "The Virtual Private Cloud (VPC) is a logically isolated network within the AWS cloud where we can launch and manage AWS resources. It provides a secure environment to group and connect related resources and services, such as EC2 instances, RDS databases, and ECS clusters. The VPC allows us to define our own IP address range, create subnets, and configure route tables and network gateways, ensuring that our infrastructure is both secure and scalable." (GitHub Copilot came up with such a great explanation here that I'm just going to use it as-is.)
 * **Availability zones A and B**: `us-east-1a` and `us-east-1b`. These zones, along with their corresponding public and private subnets, enhance the app's resilience. Currently, one task each for the ECS frontend and backend is deployed, but this can be scaled to distribute tasks across both availability zones.
@@ -134,13 +135,20 @@ The diagram above illustrates the major parts of the application infrastructure:
 * **Public route table**: The public routing table is associated with the public subnets and directs traffic to the internet through the Internet Gateway. This allows resources in the public subnets, such as the load balancer and bastion host, to communicate with the internet.
 * **Private route table**: The private routing table is associated with the private subnets and directs traffic to the internet through the NAT Gateway. This allows resources in the private subnets, such as the ECS services and RDS database, to access the internet for updates and patches while keeping them isolated from direct internet access.
 * **Internet gateway**: Allows resources within the VPC to communicate with the internet.
-* **NAT gateway**: The NAT gateway is in public subnet A but both private subnets can use it via the private route table. We *could* add a NAT gateway to public subnet B to ensure higher availability and fault tolerance.
+* **NAT gateway**: The NAT gateway is in public subnet A but both private subnets can use it via the private route table. We *could* add a NAT gateway to public subnet B to ensure higher availability and fault tolerance. The NAT gateway is used, for example, by ECS tasks to pull Docker images from the ECR. It's also used by the migrate Lambda function to get values from AWS Systems Manager Parameter Store.
 * **API gateway**: This serves as a proxy that forwards the path, data, method, and other request details to the backend API server. This allows the backend to handle the actual processing of the requests. The API gateway is set up to handle CORS, limiting web browser requests to pages served from our frontend host. In the future we'll add an API key and authorization to restrict usage of the API.
 * **ECR for hosting frontend and backend Docker images**: Our GitHub workflow builds and pushes Docker images of our frontend and backend apps to the AWS Elastic Container Registry, tagging the latest build as... "latest."
 * **ECS cluster with frontend and backend ECS services**: The GitHub workflow updates the backend and frontend services in the AWS Elastic Container Service. These services are where our frontend and backend servers actually run, providing the necessary environments for our applications to operate.
 * **RDS-hosted Postgres database instance**: The application uses an instance of Postgres hosted by the AWS Relational Database Service. It runs in the private subnets.
 * **Migrate Lambda function**: This is a function run by the GitHub workflow. A workflow step packages up the migration files with the Lambda function itself and then invokes the function.
 * **Route 53-hosted domains**: `dev.interviewprep.onyxdevtutorials.com` and `api.dev.interviewprep.onyxdevtutorials.com`. The DNS configuration in Route 53 connects the frontend and backend domains to the load balancer. This is achieved using alias records that point to the load balancer's DNS name and zone ID.
+* **CIDR Blocks**: CIDR (Classless Inter-Domain Routing) blocks are used to define IP address ranges within the VPC.
+  * **VPC CIDR Block**: This is set to `10.0.0.0/16`, allowing for 65,536 possible IP addresses -- which is plenty for this project.
+  * **Subnet CIDR Blocks**: Each subnet gets 256 IP addresses:
+    * **Public Subnet A**: 10.0.1.0/24 provides 256 IP addresses.
+    * **Public Subnet B**: 10.0.2.0/24 provides 256 IP addresses.
+    * **Private Subnet A**: 10.0.3.0/24 provides 256 IP addresses.
+    * **Private Subnet B**: 10.0.4.0/24 provides 256 IP addresses.
 
 ## Costs
 
@@ -259,6 +267,16 @@ To SSH into the bastion host with agent forwarding so that you can use local SSH
 Once you're connected to the bastion host, you can directly access the database:
 
 `psql -h <db-endpoint> -U <username> -d <db-name>`
+
+Once connected to the database, you can type `\l` to list all the databases managed by the PostgreSQL server you are connected to.
+
+Type `\dt` to list all the tables in the current database.
+
+Type `\d products` or `\d users` to get information about each of these tables.
+
+## Add New Migration File
+
+Assuming CWD is `backend`, `npx knex migrate:make <migration-file-name> --knexfile ./src/knexFile.ts --migrations-directory ../migrations`.
 
 ## Version History
 

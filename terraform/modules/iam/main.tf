@@ -1,3 +1,4 @@
+# Role used by ECS agent to perform actions on your behalf when launching and managing tasks. Common actions: Pulling images from ECR, writing logs to CloudWatch, etc.
 resource "aws_iam_role" "ecs_task_execution_role" {
     name = "${var.environment}-ecs-task-execution-role"
     assume_role_policy = jsonencode({
@@ -18,16 +19,18 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     }
 }
 
+# Policies attached are AmazonEC2ContainerRegistryReadOnly and AmazonECSTaskExecutionRolePolicy
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
     role       = aws_iam_role.ecs_task_execution_role.name
     policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "ecr_pull_policy" {
-    role       = aws_iam_role.ecs_task_execution_role.name
-    policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
+# resource "aws_iam_role_policy_attachment" "ecr_pull_policy" {
+#     role       = aws_iam_role.ecs_task_execution_role.name
+#     policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+# }
 
+# Role is assumed by the ECS tasks themselves. It allows the containers running within the tasks to interact with other AWS services. Common actions: reading from or writing to S3 buckets; accessing secrets from SSM Parameter Store; interacting with DynamoDB tables, etc. Here, because we don't attach any policies, the role does not grant any permissions to perform actions on AWS resources.
 resource "aws_iam_role" "ecs_task_role" {
     name = "${var.environment}-ecs-task-role"
     assume_role_policy = jsonencode({
@@ -46,16 +49,6 @@ resource "aws_iam_role" "ecs_task_role" {
         Name        = "interview-prep-ecs-task-role"
         Environment = var.environment
     }
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_role_policy" {
-    role       = aws_iam_role.ecs_task_role.name
-    policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_role_ssm_policy" {
-    role       = aws_iam_role.ecs_task_role.name
-    policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_role" "lambda_exec" {
@@ -116,13 +109,13 @@ resource "aws_iam_policy" "lambda_exec_policy" {
                     "arn:aws:ssm:${var.region}:${var.account_id}:parameter/interview-prep/${var.environment}/*"
                 ]
             },
-            {
-                Effect = "Allow",
-                Action = [
-                    "kms:Decrypt"
-                ],
-                Resource = "arn:aws:kms:${var.region}:${var.account_id}:key/169ce983-7b59-4ff6-9c74-533af48cf478"
-            },
+            # {
+            #     Effect = "Allow",
+            #     Action = [
+            #         "kms:Decrypt"
+            #     ],
+            #     Resource = "arn:aws:kms:${var.region}:${var.account_id}:key/169ce983-7b59-4ff6-9c74-533af48cf478"
+            # },
         ]
     })
 }

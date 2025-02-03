@@ -48,6 +48,11 @@ output "ecs_task_execution_role_arn" {
   value       = module.iam.ecs_task_execution_role_arn
 }
 
+output "ecs_task_role_arn" {
+  description = "The ARN of the ECS task role"
+  value       = module.iam.ecs_task_role_arn
+}
+
 output "lambda_exec_role_arn" {
   description = "The ARN of the Lambda execution role"
   value       = module.iam.lambda_exec_role_arn

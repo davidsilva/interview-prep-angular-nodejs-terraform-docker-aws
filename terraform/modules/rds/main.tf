@@ -18,8 +18,8 @@ resource "aws_db_instance" "postgres" {
     password             = var.db_password
     vpc_security_group_ids = [var.db_sg_id]
     db_subnet_group_name = aws_db_subnet_group.postgres.name
-    skip_final_snapshot = true
-    apply_immediately = false
+    skip_final_snapshot = true # Because I don't need a backup before deletion.
+    apply_immediately = false # This parameter determines whether modifications to the RDS instance are applied immediately or during the next maintenance window.
     tags = {
         Name        = "${var.environment}-interview-prep-db"
         Environment = var.environment

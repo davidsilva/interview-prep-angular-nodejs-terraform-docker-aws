@@ -43,7 +43,6 @@ module "rds" {
   db_username = var.db_username
   db_password = var.db_password
   db_sg_id    = module.security_groups.db_sg_id
-  lambda_sg_id = module.security_groups.lambda_sg_id
   environment = var.environment
 }
 

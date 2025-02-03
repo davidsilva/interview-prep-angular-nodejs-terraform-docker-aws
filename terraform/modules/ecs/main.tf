@@ -4,17 +4,23 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_ecs_task_definition" "frontend" {
     family                   = "${var.environment}-frontend-ecs-task"
+    // "awsvpc" mode provides each task with its own elastic network interface (ENI)
+    // and a primary private IP address, allowing tasks to have full networking features
     network_mode             = "awsvpc"
+    // Specifies that the task requires Fargate launch type
+    // Fargate is a serverless compute engine for containers that works with ECS
     requires_compatibilities = ["FARGATE"]
     cpu                      = "256"
     memory                   = "512"
     execution_role_arn = var.ecs_task_execution_role
+    # task_role_arn is used for task-level permissions, e.g., AmazonS3ReadOnlyAccess, AmazonSSMReadOnlyAccess. It allows the ECS tasks to interact with other AWS services.
     task_role_arn = var.ecs_task_role_arn
 
     container_definitions = jsonencode([
         {
             name = "frontend"
             image = "${var.frontend_repository_url}:latest"
+            # If this container stops or fails, the entire task is considered to have failed, and ECS will stop all other containers in the task.
             essential = true
             portMappings = [
                 {
@@ -38,6 +44,9 @@ resource "aws_ecs_task_definition" "frontend" {
                 }
             ],
             linuxParameters = {
+                # An init process is run inside the container.
+                # The init process handles reaping zombie processes, which are child processes that have completed execution but still have an entry in the process table.
+                # This can help prevent resource leaks and ensure that the container environment remains clean and efficient.
                 initProcessEnabled = true
             }
         }
@@ -46,17 +55,23 @@ resource "aws_ecs_task_definition" "frontend" {
 
 resource "aws_ecs_task_definition" "backend" {
     family                   = "${var.environment}-backend-ecs-task"
+    // "awsvpc" mode provides each task with its own elastic network interface (ENI)
+    // and a primary private IP address, allowing tasks to have full networking features
     network_mode             = "awsvpc"
+    // Specifies that the task requires Fargate launch type
+    // Fargate is a serverless compute engine for containers that works with ECS
     requires_compatibilities = ["FARGATE"]
     cpu                      = "256"
     memory                   = "512"
     execution_role_arn = var.ecs_task_execution_role
+    # task_role_arn is used for task-level permissions, e.g., AmazonS3ReadOnlyAccess, AmazonSSMReadOnlyAccess. It allows the ECS tasks to interact with other AWS services.
     task_role_arn = var.ecs_task_role_arn
 
     container_definitions = jsonencode([
         {
             name = "backend"
             image = "${var.backend_repository_url}"
+            # If this container stops or fails, the entire task is considered to have failed, and ECS will stop all other containers in the task.
             essential = true
             portMappings = [
                 {
@@ -84,6 +99,9 @@ resource "aws_ecs_task_definition" "backend" {
                 }
             },
             linuxParameters = {
+                # An init process is run inside the container.
+                # The init process handles reaping zombie processes, which are child processes that have completed execution but still have an entry in the process table.
+                # This can help prevent resource leaks and ensure that the container environment remains clean and efficient.
                 initProcessEnabled = true
             }
         }
@@ -109,6 +127,8 @@ resource "aws_ecs_service" "frontend" {
         container_port   = 80
     }
 
+    # You can use the ecs execute-command feature to run commands inside your containers.
+    # This is useful for debugging, troubleshooting, and managing your containers without needing SSH access or exposing additional ports.
     enable_execute_command = true
 }
 
@@ -131,6 +151,8 @@ resource "aws_ecs_service" "backend" {
         container_port   = 3000
     }
 
+    # You can use the ecs execute-command feature to run commands inside your containers.
+    # This is useful for debugging, troubleshooting, and managing your containers without needing SSH access or exposing additional ports.
     enable_execute_command = true
 }
 
