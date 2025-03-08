@@ -73,7 +73,20 @@ module "iam" {
   environment = var.environment
   account_id = var.account_id
   region     = var.region
-  github_repository = "davidsilva/interview-prep-angular-nodejs-terraform-docker-aws"
+}
+
+module "cognito" {
+  source = "../../modules/cognito"
+  environment = var.environment
+  project_name = var.project_name
+  region = var.region
+  clients = {
+    web_app = {
+      client_name = "web-app-client"
+      callback_urls = ["https://dev.interviewprep.onyxdevtutorials.com/callback"]
+      logout_urls = ["https://dev.interviewprep.onyxdevtutorials.com/logout"]
+    }
+  }
 }
 
 module "ecr" {
