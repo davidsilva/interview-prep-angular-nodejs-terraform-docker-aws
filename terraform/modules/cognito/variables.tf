@@ -13,6 +13,11 @@ variable "project_name" {
   type        = string
 }
 
+variable "account_id" {
+  description = "The AWS account ID"
+  type = string
+}
+
 # A "client" in Cognito is an application that can authenticate users. This variable is a map of objects where the key is the client name and the value is an object with the client's callback URLs and logout URLs.
 variable "clients" {
   description = "The list of clients for the user pool"
@@ -20,5 +25,11 @@ variable "clients" {
     client_name = string
     callback_urls = list(string)
     logout_urls = list(string)
+    generate_secret = bool
   }))
+}
+
+variable "api_gateway_rest_api_id" {
+  description = "The ID of the API Gateway REST API"
+  type        = string
 }

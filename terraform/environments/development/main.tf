@@ -80,11 +80,14 @@ module "cognito" {
   environment = var.environment
   project_name = var.project_name
   region = var.region
+  account_id = var.account_id
+  api_gateway_rest_api_id = module.api_gateway.api_id
   clients = {
     web_app = {
       client_name = "web-app-client"
       callback_urls = ["https://dev.interviewprep.onyxdevtutorials.com/callback"]
       logout_urls = ["https://dev.interviewprep.onyxdevtutorials.com/logout"]
+      generate_secret = false
     }
   }
 }

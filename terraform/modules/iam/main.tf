@@ -1,3 +1,5 @@
+# It might be better to move these configurations into the particular modules they apply to. If there are iam roles and policies that could be used by multiple modules, they could live here.
+
 # Role used by ECS agent to perform actions on your behalf when launching and managing tasks. Common actions: Pulling images from ECR, writing logs to CloudWatch, etc.
 resource "aws_iam_role" "ecs_task_execution_role" {
     name = "${var.environment}-ecs-task-execution-role"
