@@ -193,4 +193,6 @@ module "api_gateway" {
   region = var.region
   certificate_arn = var.certificate_arn
   cors_origin = "https://dev.interviewprep.onyxdevtutorials.com"
+  account_id = var.account_id
+  vpc_id = module.vpc.vpc_id
 }

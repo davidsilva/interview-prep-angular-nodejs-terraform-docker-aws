@@ -10,5 +10,5 @@ output "custom_domain_zone_id" {
 
 output "api_id" {
   description = "The ID of the API Gateway REST API"
-  value       = aws_api_gateway_rest_api.api.id
+  value       = aws_api_gateway_api_key.api_key.id
 }

@@ -142,3 +142,8 @@ output "frontend_cert_arn" {
     description = "The ARN of the frontend certificate"
     value = module.dns.frontend_cert_arn
 }
+
+output "api_id" {
+    description = "The ID of the API Gateway REST API"
+    value = module.api_gateway.api_id
+}

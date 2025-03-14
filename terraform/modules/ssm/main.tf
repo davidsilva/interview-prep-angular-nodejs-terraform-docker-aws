@@ -48,3 +48,13 @@ resource "aws_ssm_parameter" "db_pass" {
         ignore_changes = [value]
     }
 }
+
+resource "aws_ssm_parameter" "api_key" {
+    name = "/interview-prep/${var.environment}/API_KEY"
+    type = "SecureString"
+    value = "placeholder"
+
+    lifecycle {
+        ignore_changes = [value]
+    }
+}

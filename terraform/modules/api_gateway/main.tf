@@ -3,6 +3,41 @@ resource "aws_api_gateway_rest_api" "api" {
   description = "API Gateway for Interview Prep ${var.environment} environment"
 }
 
+# Reasons for Using API Keys (per GitHub Copilot):
+# Access Control: API keys provide a simple way to control access to your API. You can distribute keys to trusted clients and revoke them if necessary.
+# Usage Tracking: API keys allow you to track usage on a per-client basis. This is useful for monitoring and analytics, as well as for billing purposes if you charge for API access.
+# Rate Limiting: API keys can be used in conjunction with usage plans to enforce rate limits and quotas, preventing abuse and ensuring fair usage.
+# Authentication: While not as secure as other methods (e.g., OAuth), API keys provide a basic level of authentication, ensuring that only clients with a valid key can access your API.
+
+resource "aws_api_gateway_api_key" "api_key" {
+  name = "${var.environment}-interview-prep-api-key"
+  description = "API key for Interview Prep ${var.environment} environment"
+  enabled = true
+}
+
+resource "aws_api_gateway_usage_plan" "api_usage_plan" {
+  name = "${var.environment}-interview-prep-api-usage-plan"
+  description = "Usage plan for Interview Prep ${var.environment} environment"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.api.id
+    stage = aws_api_gateway_stage.api_stage.stage_name
+  }
+
+  product_code = "interview-prep"
+
+  quota_settings {
+    limit = 10000 # Maximum number of requests allowed
+    offset = 2 # Number of requests to subtract from the limit at the start of each period
+    period = "MONTH" # The time period in which the limit applies (DAY, WEEK, MONTH)
+  }
+
+  throttle_settings {
+    burst_limit = 100 # Maximum number of requests allowed in a short period of time (a few seconds)
+    rate_limit = 50 # Steady-state rate of requests per second
+  }
+}
+
 resource "aws_api_gateway_resource" "proxy" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -16,7 +51,7 @@ resource "aws_api_gateway_method" "proxy_method" {
     resource_id = aws_api_gateway_resource.proxy.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
-    api_key_required = false # No API key required (yet)
+    api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
     }
@@ -58,7 +93,7 @@ resource "aws_api_gateway_method" "health_get" {
     resource_id = aws_api_gateway_resource.health.id
     http_method = "GET"
     authorization = "NONE"
-    api_key_required = false
+    api_key_required = true
 }
 
 resource "aws_api_gateway_integration" "health_integration" {
