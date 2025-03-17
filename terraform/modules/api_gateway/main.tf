@@ -3,6 +3,12 @@ resource "aws_api_gateway_rest_api" "api" {
   description = "API Gateway for Interview Prep ${var.environment} environment"
 }
 
+resource "aws_api_gateway_resource" "v0" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "v0"
+}
+
 # Reasons for Using API Keys (per GitHub Copilot):
 # Access Control: API keys provide a simple way to control access to your API. You can distribute keys to trusted clients and revoke them if necessary.
 # Usage Tracking: API keys allow you to track usage on a per-client basis. This is useful for monitoring and analytics, as well as for billing purposes if you charge for API access.
@@ -40,7 +46,7 @@ resource "aws_api_gateway_usage_plan" "api_usage_plan" {
 
 resource "aws_api_gateway_resource" "get_api_key" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  parent_id   = aws_api_gateway_resource.v0.id
   path_part   = "get-api-key"
 }
 
@@ -61,18 +67,6 @@ resource "aws_api_gateway_integration" "get_api_key_integration" {
   uri = var.lambda_invoke_arn
 }
 
-resource "aws_api_gateway_method_response" "get_api_key_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.get_api_key.id
-  http_method = aws_api_gateway_method.get_api_key_method.http_method
-  status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-  }
-}
-
 resource "aws_api_gateway_integration_response" "get_api_key_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.get_api_key.id
@@ -82,6 +76,18 @@ resource "aws_api_gateway_integration_response" "get_api_key_integration_respons
     "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
     "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+  }
+}
+
+resource "aws_api_gateway_method_response" "get_api_key_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_method.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
   }
 }
 
@@ -99,7 +105,7 @@ resource "aws_api_gateway_method" "get_api_key_options" {
 
 resource "aws_api_gateway_resource" "proxy" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+    parent_id   = aws_api_gateway_resource.v0.id
     path_part   = "{proxy+}" # Path part that acts as a catch-all proxy for any request path.
 
     depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.
@@ -117,15 +123,6 @@ resource "aws_api_gateway_method" "proxy_method" {
   # This configuration allows the API Gateway to serve as a proxy for my actual backend application, handling all types of HTTP requests and forwarding them to the backend.
 }
 
-// Define the OPTIONS method for the proxy resource (for CORS preflight requests)
-resource "aws_api_gateway_method" "proxy_options" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = "OPTIONS"
-    authorization = "NONE"
-    api_key_required = false
-}
-
 # Define the integration between the proxy resource and the backend application. Basically, the API Gateway will forward all requests to the backend application.
 resource "aws_api_gateway_integration" "proxy_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
@@ -139,6 +136,15 @@ resource "aws_api_gateway_integration" "proxy_integration" {
       "integration.request.path.proxy" = "method.request.path.proxy"
     }
     timeout_milliseconds = 29000
+}
+
+// Define the OPTIONS method for the proxy resource (for CORS preflight requests)
+resource "aws_api_gateway_method" "proxy_options" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = "OPTIONS"
+    authorization = "NONE"
+    api_key_required = false
 }
 
 resource "aws_api_gateway_resource" "health" {
