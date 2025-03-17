@@ -38,6 +38,65 @@ resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   }
 }
 
+resource "aws_api_gateway_resource" "get_api_key" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "get-api-key"
+}
+
+resource "aws_api_gateway_method" "get_api_key_method" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = "GET"
+  authorization = "NONE"
+  api_key_required = false
+}
+
+resource "aws_api_gateway_integration" "get_api_key_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_method.http_method
+  type = "AWS_PROXY"
+  integration_http_method = "POST"
+  uri = var.lambda_invoke_arn
+}
+
+resource "aws_api_gateway_method_response" "get_api_key_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_method.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "get_api_key_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_method.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+  }
+}
+
+resource "aws_api_gateway_method" "get_api_key_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = "OPTIONS"
+  authorization = "NONE"
+  request_parameters = {
+    "method.request.header.Origin" = false,
+    "method.request.header.Access-Control-Request-Headers" = false,
+    "method.request.header.Access-Control-Request-Method" = false
+  }
+}
+
 resource "aws_api_gateway_resource" "proxy" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_rest_api.api.root_resource_id

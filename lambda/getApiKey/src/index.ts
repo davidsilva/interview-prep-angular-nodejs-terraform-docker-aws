@@ -13,7 +13,22 @@ const getSSMParameter = async (name: string): Promise<string> => {
 };
 
 export const handler: APIGatewayProxyHandler = async (event, context) => {
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://dev.interviewprep.onyxdevtutorials.com';
     const paramName = "/interview-prep/dev/API_KEY";
+
+    const origin = event.headers.origin || event.headers.Origin;
+
+    if (origin !== allowedOrigin) {
+        return {
+            statusCode: 403,
+            headers: {
+            'Access-Control-Allow-Origin': allowedOrigin,
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
+            'Access-Control-Allow-Methods': 'GET,OPTIONS',
+            },
+            body: JSON.stringify({message: 'Forbidden', error: 'Invalid origin'}),
+        }
+    }
 
     try {
         const apiKey = await getSSMParameter(paramName);

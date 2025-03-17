@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && npm run rename",
-    "rename": "rename 's/\\.js/\\.mjs/' dist/*.js"
+    "rename": "mv dist/index.js dist/index.mjs",
+    "package": "zip -r get-api-key-package.zip dist"
   },
   "author": "David Silva",
   "license": "ISC",
