@@ -1,5 +1,7 @@
 networks:
   devnetwork:
+    name: interview-prep_devnetwork
+    external: true
 
 services:
   db-test:
