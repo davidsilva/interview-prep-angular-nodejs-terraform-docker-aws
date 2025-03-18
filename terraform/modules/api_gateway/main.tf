@@ -38,7 +38,6 @@ resource "aws_api_gateway_method" "root_options" {
   }
 }
 
-# s/b "options_method_response"?
 resource "aws_api_gateway_method_response" "root_options_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_rest_api.api.root_resource_id
@@ -69,7 +68,7 @@ resource "aws_api_gateway_integration_response" "root_options_integration_respon
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,POST,DELETE,PATCH'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS'"
   }
 }
 
@@ -140,6 +139,23 @@ resource "aws_api_gateway_method" "get_api_key_method" {
   http_method = "GET"
   authorization = "NONE"
   api_key_required = false
+  request_parameters = {
+    "method.request.header.Origin" = false,
+    "method.request.header.Access-Control-Request-Headers" = false,
+    "method.request.header.Access-Control-Request-Method" = false
+  }
+}
+
+resource "aws_api_gateway_method_response" "get_api_key_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_method.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
 }
 
 resource "aws_api_gateway_integration" "get_api_key_integration" {
@@ -149,6 +165,7 @@ resource "aws_api_gateway_integration" "get_api_key_integration" {
   type = "AWS_PROXY"
   integration_http_method = "POST"
   uri = var.lambda_invoke_arn
+  # request_parameters optional
 }
 
 resource "aws_api_gateway_integration_response" "get_api_key_integration_response" {
@@ -156,15 +173,12 @@ resource "aws_api_gateway_integration_response" "get_api_key_integration_respons
   resource_id = aws_api_gateway_resource.get_api_key.id
   http_method = aws_api_gateway_method.get_api_key_method.http_method
   status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET'"
+  }
 }
-
-resource "aws_api_gateway_method_response" "get_api_key_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.get_api_key.id
-  http_method = aws_api_gateway_method.get_api_key_method.http_method
-  status_code = "200"
-}
-
 
 resource "aws_api_gateway_resource" "users" {
     rest_api_id = aws_api_gateway_rest_api.api.id
@@ -182,6 +196,18 @@ resource "aws_api_gateway_method" "users_method" {
     api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
+    }
+}
+
+resource "aws_api_gateway_method_response" "users_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_method.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = true
+      "method.response.header.Access-Control-Allow-Headers" = true
+      "method.response.header.Access-Control-Allow-Methods" = true
     }
 }
 
@@ -204,13 +230,11 @@ resource "aws_api_gateway_integration_response" "users_integration_response" {
     resource_id = aws_api_gateway_resource.users.id
     http_method = aws_api_gateway_method.users_method.http_method
     status_code = "200"
-}
-
-resource "aws_api_gateway_method_response" "users_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_method.http_method
-    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+      "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
+    }
 }
 
 resource "aws_api_gateway_resource" "products" {
@@ -229,6 +253,18 @@ resource "aws_api_gateway_method" "products_method" {
     api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
+    }
+}
+
+resource "aws_api_gateway_method_response" "products_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_method.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = true
+      "method.response.header.Access-Control-Allow-Headers" = true
+      "method.response.header.Access-Control-Allow-Methods" = true
     }
 }
 
@@ -251,13 +287,11 @@ resource "aws_api_gateway_integration_response" "products_integration_response" 
     resource_id = aws_api_gateway_resource.products.id
     http_method = aws_api_gateway_method.products_method.http_method
     status_code = "200"
-}
-
-resource "aws_api_gateway_method_response" "products_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_method.http_method
-    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+      "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
+    }
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
