@@ -12,7 +12,7 @@ export class AuthService {
     constructor(private http: HttpClient) {}
 
     fetchApiKey(): Observable<string> {
-        return this.http.get<{ apiKey: string }>('/get-api-key').pipe(
+        return this.http.get<{ apiKey: string }>('https://api.dev.interviewprep.onyxdevtutorials.com/v0/get-api-key').pipe(
             map(response => {
                 this.apiKey = response.apiKey;
                 return response.apiKey;
