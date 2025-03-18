@@ -3,24 +3,6 @@ resource "aws_api_gateway_rest_api" "api" {
   description = "API Gateway for Interview Prep ${var.environment} environment"
 }
 
-resource "aws_api_gateway_resource" "v0" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "v0"
-}
-
-# Reasons for Using API Keys (per GitHub Copilot):
-# Access Control: API keys provide a simple way to control access to your API. You can distribute keys to trusted clients and revoke them if necessary.
-# Usage Tracking: API keys allow you to track usage on a per-client basis. This is useful for monitoring and analytics, as well as for billing purposes if you charge for API access.
-# Rate Limiting: API keys can be used in conjunction with usage plans to enforce rate limits and quotas, preventing abuse and ensuring fair usage.
-# Authentication: While not as secure as other methods (e.g., OAuth), API keys provide a basic level of authentication, ensuring that only clients with a valid key can access your API.
-
-resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.environment}-interview-prep-api-key"
-  description = "API key for Interview Prep ${var.environment} environment"
-  enabled = true
-}
-
 resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   name = "${var.environment}-interview-prep-api-usage-plan"
   description = "Usage plan for Interview Prep ${var.environment} environment"
@@ -42,6 +24,108 @@ resource "aws_api_gateway_usage_plan" "api_usage_plan" {
     burst_limit = 100 # Maximum number of requests allowed in a short period of time (a few seconds)
     rate_limit = 50 # Steady-state rate of requests per second
   }
+}
+
+resource "aws_api_gateway_method" "root_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  http_method = "OPTIONS"
+  authorization = "NONE"
+  request_parameters = {
+    "method.request.header.Origin" = false,
+    "method.request.header.Access-Control-Request-Headers" = false,
+    "method.request.header.Access-Control-Request-Method" = false
+  }
+}
+
+# s/b "options_method_response"?
+resource "aws_api_gateway_method_response" "root_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  http_method = aws_api_gateway_method.root_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "root_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  http_method = aws_api_gateway_method.root_options.http_method
+  type = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "root_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  http_method = aws_api_gateway_method.root_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,POST,DELETE,PATCH'"
+  }
+}
+
+resource "aws_api_gateway_resource" "v0" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "v0"
+}
+
+resource "aws_api_gateway_resource" "health" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+    path_part   = "health"
+}
+
+resource "aws_api_gateway_method" "health_get" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.health.id
+    http_method = "GET"
+    authorization = "NONE"
+    api_key_required = false
+}
+
+resource "aws_api_gateway_integration" "health_integration" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.health.id
+    http_method = aws_api_gateway_method.health_get.http_method
+    type = "HTTP_PROXY"
+    integration_http_method = "GET"
+    uri = "http://${var.lb_dns_name}:3000/health"
+}
+
+resource "aws_api_gateway_integration_response" "health_integration_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.health.id
+    http_method = aws_api_gateway_method.health_get.http_method
+    status_code = "200"
+}
+
+resource "aws_api_gateway_method_response" "health_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.health.id
+    http_method = aws_api_gateway_method.health_get.http_method
+    status_code = "200"
+}
+
+# Reasons for Using API Keys (per GitHub Copilot):
+# Access Control: API keys provide a simple way to control access to your API. You can distribute keys to trusted clients and revoke them if necessary.
+# Usage Tracking: API keys allow you to track usage on a per-client basis. This is useful for monitoring and analytics, as well as for billing purposes if you charge for API access.
+# Rate Limiting: API keys can be used in conjunction with usage plans to enforce rate limits and quotas, preventing abuse and ensuring fair usage.
+# Authentication: While not as secure as other methods (e.g., OAuth), API keys provide a basic level of authentication, ensuring that only clients with a valid key can access your API.
+
+resource "aws_api_gateway_api_key" "api_key" {
+  name = "${var.environment}-interview-prep-api-key"
+  description = "API key for Interview Prep ${var.environment} environment"
+  enabled = true
 }
 
 resource "aws_api_gateway_resource" "get_api_key" {
@@ -72,11 +156,6 @@ resource "aws_api_gateway_integration_response" "get_api_key_integration_respons
   resource_id = aws_api_gateway_resource.get_api_key.id
   http_method = aws_api_gateway_method.get_api_key_method.http_method
   status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
-  }
 }
 
 resource "aws_api_gateway_method_response" "get_api_key_response" {
@@ -84,147 +163,116 @@ resource "aws_api_gateway_method_response" "get_api_key_response" {
   resource_id = aws_api_gateway_resource.get_api_key.id
   http_method = aws_api_gateway_method.get_api_key_method.http_method
   status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-  }
 }
 
-resource "aws_api_gateway_method" "get_api_key_options" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.get_api_key.id
-  http_method = "OPTIONS"
-  authorization = "NONE"
-  request_parameters = {
-    "method.request.header.Origin" = false,
-    "method.request.header.Access-Control-Request-Headers" = false,
-    "method.request.header.Access-Control-Request-Method" = false
-  }
-}
 
-resource "aws_api_gateway_integration" "get_api_key_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.get_api_key.id
-  http_method = aws_api_gateway_method.get_api_key_options.http_method
-  type = "MOCK"
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_resource" "proxy" {
+resource "aws_api_gateway_resource" "users" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_resource.v0.id
-    path_part   = "{proxy+}" # Path part that acts as a catch-all proxy for any request path.
+    path_part   = "users"
 
     depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.
 }
 
-resource "aws_api_gateway_method" "proxy_method" {
+resource "aws_api_gateway_method" "users_method" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
+    resource_id = aws_api_gateway_resource.users.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
     api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
     }
-  # This configuration allows the API Gateway to serve as a proxy for my actual backend application, handling all types of HTTP requests and forwarding them to the backend.
 }
 
-# Define the integration between the proxy resource and the backend application. Basically, the API Gateway will forward all requests to the backend application.
-resource "aws_api_gateway_integration" "proxy_integration" {
+resource "aws_api_gateway_integration" "users_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_method.http_method
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_method.http_method
     type = "HTTP_PROXY"
     integration_http_method = "ANY"
     # Load balancer knows that port 3000 is the backend application
-    uri = "http://${var.lb_dns_name}:3000/{proxy}"
+    uri = "http://${var.lb_dns_name}:3000/users/{proxy}"
     request_parameters = {
       "integration.request.path.proxy" = "method.request.path.proxy"
     }
     timeout_milliseconds = 29000
 }
 
-// Define the OPTIONS method for the proxy resource (for CORS preflight requests)
-resource "aws_api_gateway_method" "proxy_options" {
+resource "aws_api_gateway_integration_response" "users_integration_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = "OPTIONS"
-    authorization = "NONE"
-    api_key_required = false
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_method.http_method
+    status_code = "200"
 }
 
-resource "aws_api_gateway_resource" "health" {
+resource "aws_api_gateway_method_response" "users_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-    path_part   = "health"
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_method.http_method
+    status_code = "200"
 }
 
-resource "aws_api_gateway_method" "health_get" {
+resource "aws_api_gateway_resource" "products" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.health.id
-    http_method = "GET"
-    authorization = "NONE"
+    parent_id   = aws_api_gateway_resource.v0.id
+    path_part   = "products"
+
+    depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.
+}
+
+resource "aws_api_gateway_method" "products_method" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = "ANY" # Handle every type of HTTP request
+    authorization = "NONE" # No authorization required (yet)
     api_key_required = true
+    request_parameters = {
+      "method.request.path.proxy" = true
+    }
 }
 
-resource "aws_api_gateway_integration" "health_integration" {
+resource "aws_api_gateway_integration" "products_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.health.id
-    http_method = aws_api_gateway_method.health_get.http_method
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_method.http_method
     type = "HTTP_PROXY"
-    integration_http_method = "GET"
-    uri = "http://${var.lb_dns_name}:3000/health"
-}
-
-# Defines how API Gateway should handle the OPTIONS method for the proxy resource. In this case, it uses a MOCK integration to generate a mock response.
-resource "aws_api_gateway_integration" "proxy_options_integration" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_options.http_method
-    type = "MOCK"
-    request_templates = {
-      "application/json" = "{\"statusCode\": 200}"
+    integration_http_method = "ANY"
+    # Load balancer knows that port 3000 is the backend application
+    uri = "http://${var.lb_dns_name}:3000/products/{proxy}"
+    request_parameters = {
+      "integration.request.path.proxy" = "method.request.path.proxy"
     }
+    timeout_milliseconds = 29000
 }
 
-# In Amazon API Gateway, an aws_api_gateway_method_response specifies the possible responses from an API Gateway, while an aws_api_gateway_integration_response maps the response from an integration to the API Gateway response. 
-
-# This resource specifies the response parameters (headers) that the integration should return. It is part of the integration setup and tells API Gateway what to include in the response when the OPTIONS method is called.
-resource "aws_api_gateway_integration_response" "proxy_options_integration_response" {
+resource "aws_api_gateway_integration_response" "products_integration_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_options.http_method
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_method.http_method
     status_code = "200"
-    response_parameters = {
-        "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-        "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,POST,DELETE,PATCH'"
-        "method.response.header.Access-Control-Allow-Origin"  = "'${var.cors_origin}'"
-    }
 }
 
-# This resource specifies the method response parameters (headers) that the method should return. It is part of the method setup and ensures that the headers specified in the integration response are actually included in the final response sent to the client.
-resource "aws_api_gateway_method_response" "proxy_options_response" {
+resource "aws_api_gateway_method_response" "products_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_options.http_method
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_method.http_method
     status_code = "200"
-    response_parameters = {
-        "method.response.header.Access-Control-Allow-Headers" = true
-        "method.response.header.Access-Control-Allow-Methods" = true
-        "method.response.header.Access-Control-Allow-Origin"  = true
-    }
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
     depends_on = [
-      aws_api_gateway_integration.proxy_integration,
-      aws_api_gateway_integration.proxy_options_integration,
-      aws_api_gateway_integration_response.proxy_options_integration_response,
-      aws_api_gateway_method_response.proxy_options_response
+      aws_api_gateway_integration.root_options_integration,
+      aws_api_gateway_integration_response.root_options_integration_response,
+      aws_api_gateway_method_response.root_options_response,
+      aws_api_gateway_integration_response.users_integration_response,
+      aws_api_gateway_method_response.users_response,
+      aws_api_gateway_integration_response.products_integration_response,
+      aws_api_gateway_method_response.products_response,
+      aws_api_gateway_integration_response.get_api_key_integration_response,
+      aws_api_gateway_method_response.get_api_key_response,
+      aws_api_gateway_integration_response.health_integration_response,
+      aws_api_gateway_method_response.health_response
     ]
     rest_api_id = aws_api_gateway_rest_api.api.id
 
