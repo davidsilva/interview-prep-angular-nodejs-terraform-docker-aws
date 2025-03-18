@@ -7,7 +7,7 @@ import retry from "retry";
 
 const db = knex(knexConfig['test_users']);
 
-const usersPath = '/api/v0/users';
+const usersPath = '/users';
 
 const waitForDb = async (): Promise<void> => {
     const operation = retry.operation({

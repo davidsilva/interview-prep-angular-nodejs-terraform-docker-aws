@@ -10,7 +10,7 @@ import retry from "retry";
 
 const db = knex(knexConfig['test_products']);
 
-const productsPath = '/api/v0/products';
+const productsPath = '/products';
 
 const waitForDb = async (): Promise<void> => {
     const operation = retry.operation({

@@ -6,11 +6,13 @@ import {
 import { provideHttpClient } from '@angular/common/http';
 import { mockProducts } from '../mocks/mock-products';
 import { ProductsService } from './products.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   Product,
   ProductStatus,
 } from '@onyxdevtutorials/interview-prep-shared';
 import { environment } from '../../../environments/environment';
+import { of } from 'rxjs';
 
 const apiBaseUrl = environment.apiBaseUrl;
 const productsPath = `${apiBaseUrl}/products`;
@@ -18,18 +20,28 @@ const productsPath = `${apiBaseUrl}/products`;
 describe('ProductsService', () => {
   let service: ProductsService;
   let httpTestingController: HttpTestingController;
+  let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['fetchApiKey', 'getApiKey']);
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         ProductsService,
+        { provide: AuthService, useValue: authServiceSpy },
       ],
     });
 
     service = TestBed.inject(ProductsService);
     httpTestingController = TestBed.inject(HttpTestingController);
+    authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+
+    // Mock the fetchApiKey method to
+    // return a dummy API key
+    authService.fetchApiKey.and.returnValue(of('dummy-api-key'));
+    authService.getApiKey.and.returnValue('fake-api-key');
   });
 
   afterEach(() => {

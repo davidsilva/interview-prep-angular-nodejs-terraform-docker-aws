@@ -103,6 +103,16 @@ resource "aws_api_gateway_method" "get_api_key_options" {
   }
 }
 
+resource "aws_api_gateway_integration" "get_api_key_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.get_api_key.id
+  http_method = aws_api_gateway_method.get_api_key_options.http_method
+  type = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
 resource "aws_api_gateway_resource" "proxy" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_resource.v0.id
