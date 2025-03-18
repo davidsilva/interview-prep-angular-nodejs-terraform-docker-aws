@@ -18,7 +18,8 @@ let corsOrigin: string;
 if (process.env['NODE_ENV'] === 'local') {
   corsOrigin = 'http://localhost:4200';
 } else {
-  corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
+  // corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
+  corsOrigin = "*";
 }
 
 const corsOptions = {
