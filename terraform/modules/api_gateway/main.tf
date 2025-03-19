@@ -3,6 +3,14 @@ resource "aws_api_gateway_rest_api" "api" {
   description = "API Gateway for Interview Prep ${var.environment} environment"
 }
 
+resource "aws_lambda_permission" "api_gateway_invoke_lambda" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = var.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn = "arn:aws:execute-api:${var.region}:${var.account_id}:${aws_api_gateway_rest_api.api.id}/*/*"
+}
+
 resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   name = "${var.environment}-interview-prep-api-usage-plan"
   description = "Usage plan for Interview Prep ${var.environment} environment"
@@ -158,14 +166,15 @@ resource "aws_api_gateway_method_response" "get_api_key_response" {
   }
 }
 
+# looks like example at https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_integration
 resource "aws_api_gateway_integration" "get_api_key_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.get_api_key.id
   http_method = aws_api_gateway_method.get_api_key_method.http_method
   type = "AWS_PROXY"
   integration_http_method = "POST"
+  # uri = "arn:aws:apigateway:${var.region}:lambda:path/2015-03-31/functions/${var.lambda_invoke_arn}/invocations"
   uri = var.lambda_invoke_arn
-  # request_parameters optional
 }
 
 resource "aws_api_gateway_integration_response" "get_api_key_integration_response" {
@@ -176,7 +185,7 @@ resource "aws_api_gateway_integration_response" "get_api_key_integration_respons
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
   }
 }
 
@@ -193,7 +202,7 @@ resource "aws_api_gateway_method" "users_method" {
     resource_id = aws_api_gateway_resource.users.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
-    api_key_required = true
+    api_key_required = false
     request_parameters = {
       "method.request.path.proxy" = true
     }
@@ -250,7 +259,7 @@ resource "aws_api_gateway_method" "products_method" {
     resource_id = aws_api_gateway_resource.products.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
-    api_key_required = true
+    api_key_required = false
     request_parameters = {
       "method.request.path.proxy" = true
     }
@@ -329,7 +338,7 @@ resource "aws_api_gateway_stage" "api_stage" {
 
     access_log_settings {
       destination_arn = aws_cloudwatch_log_group.api_gateway_log_group.arn
-      format = "$context.requestId $context.identity.sourceIp $context.identity.userAgent $context.requestTime $context.httpMethod $context.resourcePath $context.status $context.protocol $context.responseLength"
+      format = "$context.requestId $context.identity.sourceIp $context.identity.userAgent $context.requestTime $context.httpMethod $context.resourcePath $context.status $context.protocol $context.responseLength $context.integrationErrorMessage"
     }
 }
 

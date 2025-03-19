@@ -14,13 +14,8 @@ resource "aws_lambda_function" "lambda" {
     }
 
     environment {
-        # variables = {
-        #     DB_HOST_PARAM = var.db_host_param
-        #     DB_PORT_PARAM = var.db_port_param
-        #     DB_NAME_PARAM = var.db_name_param
-        #     DB_USER_PARAM = var.db_user_param
-        #     DB_PASS_PARAM = var.db_pass_param
-        # }
-        variables = var.environment_variables
+        variables = merge(var.environment_variables, {
+            ENABLE_LOGGING = var.enable_logging ? "true" : "false"
+        })
     }
 }

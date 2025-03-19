@@ -13,9 +13,14 @@ const getSSMParameter = async (name: string): Promise<string> => {
 };
 
 export const handler: APIGatewayProxyHandler = async (event, context) => {
-    console.log('Event', event);
-    console.log('Context', context);
-    const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://dev.interviewprep.onyxdevtutorials.com';
+    const enableLogging = process.env.ENABLE_LOGGING === 'true';
+
+    if (enableLogging) {
+        console.log('Event', event);
+        console.log('Context', context);
+    }
+    // const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://dev.interviewprep.onyxdevtutorials.com';
+    const allowedOrigin = '*';
     const paramName = "/interview-prep/development/API_KEY";
 
     const origin = event.headers?.origin || event.headers?.Origin;
@@ -44,6 +49,10 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
             body: JSON.stringify({apiKey}),
         }
     } catch (err) {
+        if (enableLogging) {
+            console.error('Error getting API key', err);
+        }
+        
         if (err instanceof Error) {
             return {
                 statusCode: 500,

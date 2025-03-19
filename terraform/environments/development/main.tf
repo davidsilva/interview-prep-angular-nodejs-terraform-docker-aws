@@ -137,6 +137,7 @@ module "lambda_migrate" {
     DB_PASS_PARAM = module.ssm_parameters.db_pass_param
   }
   lambda_exec_role_arn = module.iam.lambda_exec_role_arn
+  enable_logging = false
 }
 
 module "lambda_get_api_key" {
@@ -151,6 +152,7 @@ module "lambda_get_api_key" {
   lambda_subnet_ids = [module.subnets.private_subnet_a_id, module.subnets.private_subnet_b_id]
   lambda_sg_id = module.security_groups.lambda_sg_id
   lambda_exec_role_arn = module.iam.lambda_exec_role_arn
+  enable_logging = true
 }
 
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
@@ -213,4 +215,5 @@ module "api_gateway" {
   account_id = var.account_id
   vpc_id = module.vpc.vpc_id
   lambda_invoke_arn = module.lambda_get_api_key.invoke_arn
+  lambda_function_name = module.lambda_get_api_key.lambda_function_name
 }

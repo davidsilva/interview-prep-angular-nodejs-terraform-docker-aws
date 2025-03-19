@@ -53,3 +53,9 @@ variable "environment_variables" {
   type        = map(string)
   default = {}
 }
+
+variable "enable_logging" {
+  description = "Enable logging for the lambda function"
+  type        = bool
+  default     = false
+}
