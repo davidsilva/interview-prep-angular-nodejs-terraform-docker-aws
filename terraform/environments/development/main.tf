@@ -210,8 +210,7 @@ module "api_gateway" {
   lb_dns_name = module.load_balancer.lb_dns_name
   region = var.region
   certificate_arn = var.certificate_arn
-  # cors_origin = "https://dev.interviewprep.onyxdevtutorials.com"
-  cors_origin = "*"
+  cors_origin = "https://dev.interviewprep.onyxdevtutorials.com"
   account_id = var.account_id
   vpc_id = module.vpc.vpc_id
   lambda_invoke_arn = module.lambda_get_api_key.invoke_arn

@@ -19,26 +19,27 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
         console.log('Event', event);
         console.log('Context', context);
     }
-    // const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://dev.interviewprep.onyxdevtutorials.com';
-    const allowedOrigin = '*';
+    const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://dev.interviewprep.onyxdevtutorials.com';
     const paramName = "/interview-prep/development/API_KEY";
 
     const origin = event.headers?.origin || event.headers?.Origin;
 
-    // if (!origin || origin !== allowedOrigin) {
-    //     return {
-    //         statusCode: 403,
-    //         headers: {
-    //         'Access-Control-Allow-Origin': allowedOrigin,
-    //         'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
-    //         'Access-Control-Allow-Methods': 'GET,OPTIONS',
-    //         },
-    //         body: JSON.stringify({message: 'Forbidden', error: 'Invalid origin'}),
-    //     }
-    // }
+    // The AWS API Gateway actually does the real CORS handling. This is meant to prevent access via non-browsers.
+    if (!origin || origin !== allowedOrigin) {
+        return {
+            statusCode: 403,
+            headers: {
+            'Access-Control-Allow-Origin': allowedOrigin,
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent',
+            'Access-Control-Allow-Methods': 'GET,OPTIONS',
+            },
+            body: JSON.stringify({message: 'Forbidden', error: 'Invalid origin'}),
+        }
+    }
 
     try {
         const apiKey = await getSSMParameter(paramName);
+        // Possibly redundant CORS headers. Might be overwritten by the API Gateway.
         return {
             statusCode: 200,
             headers: {
@@ -52,7 +53,7 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
         if (enableLogging) {
             console.error('Error getting API key', err);
         }
-        
+
         if (err instanceof Error) {
             return {
                 statusCode: 500,
