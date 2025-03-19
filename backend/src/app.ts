@@ -15,11 +15,11 @@ app.use(bodyParser.json());
 
 let corsOrigin: string;
 
+// It's problematic to set CORS options here *and* in the API Gateway. We can address that later.
 if (process.env['NODE_ENV'] === 'local') {
   corsOrigin = 'http://localhost:4200';
 } else {
-  // corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
-  corsOrigin = "*";
+  corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
 }
 
 const corsOptions = {
