@@ -34,9 +34,15 @@ resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   }
 }
 
-resource "aws_api_gateway_method" "root_options" {
+resource "aws_api_gateway_resource" "v0" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_rest_api.api.root_resource_id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "v0"
+}
+
+resource "aws_api_gateway_method" "v0_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.v0.id
   http_method = "OPTIONS"
   authorization = "NONE"
   request_parameters = {
@@ -46,10 +52,10 @@ resource "aws_api_gateway_method" "root_options" {
   }
 }
 
-resource "aws_api_gateway_method_response" "root_options_response" {
+resource "aws_api_gateway_method_response" "v0_options_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_rest_api.api.root_resource_id
-  http_method = aws_api_gateway_method.root_options.http_method
+  resource_id = aws_api_gateway_resource.v0.id
+  http_method = aws_api_gateway_method.v0_options.http_method
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin" = true
@@ -58,32 +64,28 @@ resource "aws_api_gateway_method_response" "root_options_response" {
   }
 }
 
-resource "aws_api_gateway_integration" "root_options_integration" {
+resource "aws_api_gateway_integration" "v0_options_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_rest_api.api.root_resource_id
-  http_method = aws_api_gateway_method.root_options.http_method
+  resource_id = aws_api_gateway_resource.v0.id
+  http_method = aws_api_gateway_method.v0_options.http_method
   type = "MOCK"
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
   }
 }
 
-resource "aws_api_gateway_integration_response" "root_options_integration_response" {
+resource "aws_api_gateway_integration_response" "v0_options_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_rest_api.api.root_resource_id
-  http_method = aws_api_gateway_method.root_options.http_method
+  resource_id = aws_api_gateway_resource.v0.id
+  http_method = aws_api_gateway_method.v0_options.http_method
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS'"
   }
-}
 
-resource "aws_api_gateway_resource" "v0" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "v0"
+  depends_on = [ aws_api_gateway_integration.v0_options_integration ]
 }
 
 resource "aws_api_gateway_resource" "health" {
@@ -202,7 +204,10 @@ resource "aws_api_gateway_method" "users_method" {
     authorization = "NONE" # No authorization required (yet)
     api_key_required = true
     request_parameters = {
-      "method.request.path.proxy" = true
+      "method.request.path.proxy" = true,
+      "method.request.header.Origin" = false,
+      "method.request.header.Access-Control-Request-Headers" = false,
+      "method.request.header.Access-Control-Request-Method" = false
     }
 }
 
@@ -244,6 +249,52 @@ resource "aws_api_gateway_integration_response" "users_integration_response" {
     }
 }
 
+resource "aws_api_gateway_method" "users_options" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = "OPTIONS"
+    authorization = "NONE"
+    request_parameters = {
+      "method.request.header.Origin" = false,
+      "method.request.header.Access-Control-Request-Headers" = false,
+      "method.request.header.Access-Control-Request-Method" = false
+    }
+}
+
+resource "aws_api_gateway_method_response" "users_options_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_options.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = true
+      "method.response.header.Access-Control-Allow-Headers" = true
+      "method.response.header.Access-Control-Allow-Methods" = true
+    }
+}
+
+resource "aws_api_gateway_integration" "users_options_integration" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_options.http_method
+    type = "MOCK"
+    request_templates = {
+      "application/json" = "{\"statusCode\": 200}"
+    }
+}
+
+resource "aws_api_gateway_integration_response" "users_options_integration_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.users.id
+    http_method = aws_api_gateway_method.users_options.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+      "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
+    }
+}
+
 resource "aws_api_gateway_resource" "products" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_resource.v0.id
@@ -259,7 +310,10 @@ resource "aws_api_gateway_method" "products_method" {
     authorization = "NONE" # No authorization required (yet)
     api_key_required = true
     request_parameters = {
-      "method.request.path.proxy" = true
+      "method.request.path.proxy" = true,
+      "method.request.header.Origin" = false,
+      "method.request.header.Access-Control-Request-Headers" = false,
+      "method.request.header.Access-Control-Request-Method" = false
     }
 }
 
@@ -301,20 +355,75 @@ resource "aws_api_gateway_integration_response" "products_integration_response" 
     }
 }
 
+resource "aws_api_gateway_method" "products_options" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = "OPTIONS"
+    authorization = "NONE"
+    request_parameters = {
+      "method.request.header.Origin" = false,
+      "method.request.header.Access-Control-Request-Headers" = false,
+      "method.request.header.Access-Control-Request-Method" = false
+    }
+}
+
+resource "aws_api_gateway_method_response" "products_options_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_options.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = true
+      "method.response.header.Access-Control-Allow-Headers" = true
+      "method.response.header.Access-Control-Allow-Methods" = true
+    }
+}
+
+resource "aws_api_gateway_integration" "products_options_integration" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_options.http_method
+    type = "MOCK"
+    request_templates = {
+      "application/json" = "{\"statusCode\": 200}"
+    }
+}
+
+resource "aws_api_gateway_integration_response" "products_options_integration_response" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    resource_id = aws_api_gateway_resource.products.id
+    http_method = aws_api_gateway_method.products_options.http_method
+    status_code = "200"
+    response_parameters = {
+      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+      "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS'"
+    }
+}
+
+# custom_domain_name and custom_domain_zone_id are output and used in the dns module.
+resource "aws_api_gateway_domain_name" "custom_domain" {
+  domain_name = "api.dev.interviewprep.onyxdevtutorials.com"
+
+  endpoint_configuration {
+    types = ["EDGE"] # The endpoint type (EDGE, REGIONAL, or PRIVATE)
+  }
+
+  certificate_arn = var.certificate_arn # The ARN of the SSL certificate to use for the custom domain.
+}
+
+resource "aws_api_gateway_method_settings" "api_method_settings" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    stage_name = aws_api_gateway_stage.api_stage.stage_name
+    method_path = "*/*" # The path and method for which these settings apply. The format is HTTP_METHOD/RESOURCE_PATH. You can use */* to apply the settings to all methods and resources.
+    settings {
+        metrics_enabled = true # Enable CloudWatch metrics for the method.
+        logging_level = "INFO" # E.g., INFO, ERROR
+        data_trace_enabled = true # Can generate a large volume of log data, especially for APIs with high traffic or large payloads.
+    }
+}
+
 resource "aws_api_gateway_deployment" "api_deployment" {
-    depends_on = [
-      aws_api_gateway_integration.root_options_integration,
-      aws_api_gateway_integration_response.root_options_integration_response,
-      aws_api_gateway_method_response.root_options_response,
-      aws_api_gateway_integration_response.users_integration_response,
-      aws_api_gateway_method_response.users_response,
-      aws_api_gateway_integration_response.products_integration_response,
-      aws_api_gateway_method_response.products_response,
-      aws_api_gateway_integration_response.get_api_key_integration_response,
-      aws_api_gateway_method_response.get_api_key_response,
-      aws_api_gateway_integration_response.health_integration_response,
-      aws_api_gateway_method_response.health_response
-    ]
     rest_api_id = aws_api_gateway_rest_api.api.id
 
     # This effectively triggers a redeployment whenever I do `terraform apply`, even if there are no actual changes to the configuration. I need to experiment with this setting.
@@ -340,15 +449,11 @@ resource "aws_api_gateway_stage" "api_stage" {
     }
 }
 
-resource "aws_api_gateway_method_settings" "api_method_settings" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    stage_name = aws_api_gateway_stage.api_stage.stage_name
-    method_path = "*/*" # The path and method for which these settings apply. The format is HTTP_METHOD/RESOURCE_PATH. You can use */* to apply the settings to all methods and resources.
-    settings {
-        metrics_enabled = true # Enable CloudWatch metrics for the method.
-        logging_level = "INFO" # E.g., INFO, ERROR
-        data_trace_enabled = true # Can generate a large volume of log data, especially for APIs with high traffic or large payloads.
-    }
+# Used to map the custom domain to the API Gateway stage.
+resource "aws_api_gateway_base_path_mapping" "custom_domain_mapping" {
+  api_id = aws_api_gateway_rest_api.api.id
+  stage_name = aws_api_gateway_stage.api_stage.stage_name
+  domain_name = aws_api_gateway_domain_name.custom_domain.domain_name
 }
 
 resource "aws_cloudwatch_log_group" "api_gateway_log_group" {
@@ -398,22 +503,4 @@ resource "aws_iam_policy" "api_gateway_cloudwatch_policy" {
 resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch_policy_attachment" {
     policy_arn = aws_iam_policy.api_gateway_cloudwatch_policy.arn
     role = aws_iam_role.api_gateway_cloudwatch_role.name
-}
-
-# custom_domain_name and custom_domain_zone_id are output and used in the dns module.
-resource "aws_api_gateway_domain_name" "custom_domain" {
-  domain_name = "api.dev.interviewprep.onyxdevtutorials.com"
-
-  endpoint_configuration {
-    types = ["EDGE"] # The endpoint type (EDGE, REGIONAL, or PRIVATE)
-  }
-
-  certificate_arn = var.certificate_arn # The ARN of the SSL certificate to use for the custom domain.
-}
-
-# Used to map the custom domain to the API Gateway stage.
-resource "aws_api_gateway_base_path_mapping" "custom_domain_mapping" {
-  api_id = aws_api_gateway_rest_api.api.id
-  stage_name = aws_api_gateway_stage.api_stage.stage_name
-  domain_name = aws_api_gateway_domain_name.custom_domain.domain_name
 }

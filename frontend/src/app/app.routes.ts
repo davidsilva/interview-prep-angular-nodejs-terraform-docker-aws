@@ -18,9 +18,9 @@ export const routes: Routes = [
   {
     path: 'products',
     component: ProductsHomeComponent,
-    // resolve: {
-    //   apiKey: ApiKeyResolver
-    // },
+    resolve: {
+      apiKey: ApiKeyResolver
+    },
     children: [
       {
         path: '',
@@ -39,9 +39,9 @@ export const routes: Routes = [
   {
     path: 'users',
     component: UsersHomeComponent,
-    // resolve: {
-    //   apiKey: ApiKeyResolver
-    // },
+    resolve: {
+      apiKey: ApiKeyResolver
+    },
     children: [
       {
         path: '',
