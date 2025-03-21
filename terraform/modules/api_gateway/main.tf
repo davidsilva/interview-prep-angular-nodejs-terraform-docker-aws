@@ -200,7 +200,7 @@ resource "aws_api_gateway_method" "users_method" {
     resource_id = aws_api_gateway_resource.users.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
-    api_key_required = false
+    api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
     }
@@ -257,7 +257,7 @@ resource "aws_api_gateway_method" "products_method" {
     resource_id = aws_api_gateway_resource.products.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
-    api_key_required = false
+    api_key_required = true
     request_parameters = {
       "method.request.path.proxy" = true
     }

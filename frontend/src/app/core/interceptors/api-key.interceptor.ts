@@ -9,6 +9,7 @@ export class ApiKeyInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const apiKey = this.authService.getApiKey();
+    console.log('API Key from interceptor:', apiKey);
     if (apiKey) {
         const cloned = req.clone({
             headers: req.headers.set('x-api-key', apiKey)
