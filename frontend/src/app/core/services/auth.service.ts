@@ -13,7 +13,7 @@ export class AuthService {
         this.fetchApiKey();
     }
 
-    private fetchApiKey(): void {
+    public fetchApiKey(): void {
         this.http.get<{ apiKey: string }>('https://api.dev.interviewprep.onyxdevtutorials.com/v0/get-api-key').pipe(
             map(response => response.apiKey)
         ).subscribe(apiKey => {
