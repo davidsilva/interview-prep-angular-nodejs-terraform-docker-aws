@@ -1,27 +1,28 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-    private apiKey: string | null = null;
+    private apiKeySubject = new BehaviorSubject<string | null>(null);
 
-    constructor(private http: HttpClient) {}
-
-    fetchApiKey(): Observable<string> {
-        return this.http.get<{ apiKey: string }>('https://api.dev.interviewprep.onyxdevtutorials.com/v0/get-api-key').pipe(
-            map(response => {
-                this.apiKey = response.apiKey;
-                return response.apiKey;
-            })
-        );
+    constructor(private http: HttpClient) {
+        this.fetchApiKey();
     }
 
-    getApiKey(): string | null {
-        console.log('Getting API Key:', this.apiKey);
-        return this.apiKey;
+    private fetchApiKey(): void {
+        this.http.get<{ apiKey: string }>('https://api.dev.interviewprep.onyxdevtutorials.com/v0/get-api-key').pipe(
+            map(response => response.apiKey)
+        ).subscribe(apiKey => {
+            console.log('Fetched API Key:', apiKey);
+            this.apiKeySubject.next(apiKey);
+        });
+    }
+
+    getApiKey(): Observable<string | null> {
+        return this.apiKeySubject.asObservable();
     }
 }
