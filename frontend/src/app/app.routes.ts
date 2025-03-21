@@ -7,6 +7,7 @@ import { UsersListComponent } from './users/components/users-list/users-list.com
 import { ProductsListComponent } from './products/components/products-list/products-list.component';
 import { ProductsCreateComponent } from './products/components/products-create/products-create.component';
 import { ProductsUpdateComponent } from './products/components/products-update/products-update.component';
+import { ApiKeyResolver } from './core/resolvers/api-key.resolver';
 
 export const routes: Routes = [
   {
@@ -17,6 +18,9 @@ export const routes: Routes = [
   {
     path: 'products',
     component: ProductsHomeComponent,
+    resolve: {
+      apiKey: ApiKeyResolver
+    },
     children: [
       {
         path: '',
@@ -35,6 +39,9 @@ export const routes: Routes = [
   {
     path: 'users',
     component: UsersHomeComponent,
+    resolve: {
+      apiKey: ApiKeyResolver
+    },
     children: [
       {
         path: '',
