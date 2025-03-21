@@ -21,6 +21,7 @@ export class AuthService {
     }
 
     getApiKey(): string | null {
+        console.log('Getting API Key:', this.apiKey);
         return this.apiKey;
     }
 }
