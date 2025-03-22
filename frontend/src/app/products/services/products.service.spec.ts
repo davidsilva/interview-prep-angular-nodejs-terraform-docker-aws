@@ -40,7 +40,7 @@ describe('ProductsService', () => {
 
     // Mock the fetchApiKey method to
     // return a dummy API key
-    authService.fetchApiKey.and.returnValue(undefined);
+    authService.fetchApiKey.and.returnValue(of(null));
     authService.getApiKey.and.returnValue(of('fake-api-key'));
   });
 

@@ -12,14 +12,14 @@ export class ApiKeyInterceptor implements HttpInterceptor {
     return this.authService.getApiKey().pipe(
         take(1),
         switchMap(apiKey => {
-            if (apiKey !== null) {
-                const cloned = req.clone({
-                    headers: req.headers.set('x-api-key', apiKey)
-                });
-                return next.handle(cloned);
-            } else {
-              console.warn('No API key found, request will be sent without it.');
-              return next.handle(req);
+          if (apiKey !== null) {
+              const cloned = req.clone({
+                  headers: req.headers.set('x-api-key', apiKey)
+              });
+              return next.handle(cloned);
+          } else {
+            console.warn('No API key found, request will be sent without it.');
+            return next.handle(req);
           }
         })
     );
