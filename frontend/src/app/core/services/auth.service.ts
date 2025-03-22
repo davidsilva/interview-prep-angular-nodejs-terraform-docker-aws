@@ -24,7 +24,7 @@ export class AuthService {
             this.apiKeySubject.next(localApiKey);
             return of(localApiKey);
         } else {
-            return this.httpClient.get<{ apiKey: string }>('https://api.dev.interviewprep.onyxdevtutorials.com/v0/get-api-key').pipe(
+            return this.httpClient.get<{ apiKey: string }>(`${environment.apiBaseUrl}/get-api-key`).pipe(
                 map(response => response.apiKey),
                 tap(apiKey => {
                     console.log('API Key fetched in tap:', apiKey);
