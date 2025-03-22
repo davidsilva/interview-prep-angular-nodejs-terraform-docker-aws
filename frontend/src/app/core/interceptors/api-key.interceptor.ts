@@ -12,6 +12,7 @@ export class ApiKeyInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Avoid insane circular dependency issues by not intercepting requests to get the API key
     if (req.url === `${environment.apiBaseUrl}/get-api-key`) {
+      console.warn('Skipping API key interception for fetching API key.');
       return next.handle(req);
     }
 
