@@ -109,8 +109,3 @@ variable "certificate_arn" {
     description = "The ARN of the certificate to use for the custom domain"
     type = string
 }
-
-variable "lambda_package_get_api_key" {
-    description = "The path to the ZIP file containing the Lambda function code"
-    type = string
-}

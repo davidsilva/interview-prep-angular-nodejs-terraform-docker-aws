@@ -107,15 +107,6 @@ resource "aws_iam_policy" "lambda_exec_policy" {
                     "arn:aws:ssm:${var.region}:${var.account_id}:parameter/interview-prep/${var.environment}/*"
                 ]
             },
-            {
-                Effect = "Allow",
-                Action = [
-                    "lambda:InvokeFunction"
-                ],
-                Resource = [
-                    "arn:aws:lambda:${var.region}:${var.account_id}:function:${var.environment}-interview-prep-get-api-key"
-                ]
-            }
         ]
     })
 }

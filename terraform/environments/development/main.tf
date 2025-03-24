@@ -140,21 +140,6 @@ module "lambda_migrate" {
   enable_logging = false
 }
 
-module "lambda_get_api_key" {
-  source = "../../modules/lambda"
-  environment = var.environment
-  function_name = "${var.environment}-interview-prep-get-api-key"
-  handler = "index.handler"
-  runtime = "nodejs20.x"
-  timeout = 300
-  memory_size = 128
-  lambda_package = var.lambda_package_get_api_key
-  lambda_subnet_ids = [module.subnets.private_subnet_a_id, module.subnets.private_subnet_b_id]
-  lambda_sg_id = module.security_groups.lambda_sg_id
-  lambda_exec_role_arn = module.iam.lambda_exec_role_arn
-  enable_logging = true
-}
-
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
   name = "/aws/vpc/flow-log"
   retention_in_days = 7
@@ -213,6 +198,4 @@ module "api_gateway" {
   cors_origin = "https://dev.interviewprep.onyxdevtutorials.com"
   account_id = var.account_id
   vpc_id = module.vpc.vpc_id
-  lambda_invoke_arn = module.lambda_get_api_key.invoke_arn
-  lambda_function_name = module.lambda_get_api_key.lambda_function_name
 }

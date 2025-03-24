@@ -147,8 +147,3 @@ output "api_id" {
     description = "The ID of the API Gateway REST API"
     value = module.api_gateway.api_id
 }
-
-output "lambda_invoke_arn" {
-    description = "The ARN to invoke the Lambda function"
-    value = module.lambda_get_api_key.invoke_arn
-}

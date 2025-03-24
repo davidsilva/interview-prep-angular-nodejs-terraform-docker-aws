@@ -37,13 +37,3 @@ variable "vpc_id" {
   description = "The ID of the VPC"
   type        = string
 }
-
-variable "lambda_invoke_arn" {
-  description = "The ARN to invoke the lambda function"
-  type        = string
-}
-
-variable "lambda_function_name" {
-  description = "The name of the lambda function"
-  type        = string
-}

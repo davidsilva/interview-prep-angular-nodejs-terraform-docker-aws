@@ -6,7 +6,6 @@ import {
 import { provideHttpClient } from '@angular/common/http';
 import { mockUsers } from '../mocks/mock-users';
 import { UsersService } from './users.service';
-import { AuthService } from '../../core/services/auth.service';
 import { User, UserStatus } from '@onyxdevtutorials/interview-prep-shared';
 import { environment } from '../../../environments/environment';
 import { of } from 'rxjs';
@@ -17,27 +16,18 @@ const usersPath = `${apiBaseUrl}/users`;
 describe('UsersService', () => {
   let service: UsersService;
   let httpTestingController: HttpTestingController;
-  let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['fetchApiKey', 'getApiKey']);
-
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         UsersService,
-        { provide: AuthService, useValue: authServiceSpy },
       ],
     });
 
     service = TestBed.inject(UsersService);
     httpTestingController = TestBed.inject(HttpTestingController);
-    authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-
-    // Mock the fetchApiKey method to return a dummy API key
-    authService.fetchApiKey.and.returnValue(of(null));
-    authService.getApiKey.and.returnValue(of('fake-api-key'));
   });
 
   afterEach(() => {
