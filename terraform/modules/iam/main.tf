@@ -101,7 +101,8 @@ resource "aws_iam_policy" "lambda_exec_policy" {
                     "ssm:GetParameters",
                     "ssm:GetParametersByPath",
                     "ssm:GetParameterHistory",
-                    "ssm:List*"
+                    "ssm:List*",
+                    "kms:Decrypt"
                 ],
                 Resource = [
                     "arn:aws:ssm:${var.region}:${var.account_id}:parameter/interview-prep/${var.environment}/*"
