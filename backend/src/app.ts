@@ -13,23 +13,23 @@ import { Request, Response, NextFunction } from 'express-serve-static-core';
 const app = express();
 app.use(bodyParser.json());
 
-// let corsOrigin: string;
+let corsOrigin: string;
 
 // It's problematic to set CORS options here *and* in the API Gateway. We can address that later.
-// if (process.env['NODE_ENV'] === 'local') {
-//   corsOrigin = 'http://localhost:4200';
-// } else {
-//   corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
-// }
+if (process.env['NODE_ENV'] === 'local') {
+  corsOrigin = 'http://localhost:4200';
+} else {
+  corsOrigin = '*';
+}
 
-// const corsOptions = {
-//   origin: corsOrigin,
-//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-//   credentials: true,
-//   optionsSuccessStatus: 200,
-// };
+const corsOptions = {
+  origin: corsOrigin,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(logger);
 
 // db will be test if running tests
