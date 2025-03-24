@@ -76,11 +76,7 @@ resource "aws_api_gateway_method" "proxy_options" {
     resource_id = aws_api_gateway_resource.proxy.id
     http_method = "OPTIONS"
     authorization = "NONE"
-    request_parameters = {
-      "method.request.header.Origin" = false,
-      "method.request.header.Access-Control-Request-Headers" = false,
-      "method.request.header.Access-Control-Request-Method" = false
-    }
+    api_key_required = false
 }
 
 resource "aws_api_gateway_method_response" "proxy_options_response" {
@@ -128,17 +124,17 @@ resource "aws_api_gateway_method" "proxy_method" {
     }
 }
 
-resource "aws_api_gateway_method_response" "proxy_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_method.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = true
-      "method.response.header.Access-Control-Allow-Headers" = true
-      "method.response.header.Access-Control-Allow-Methods" = true
-    }
-}
+# resource "aws_api_gateway_method_response" "proxy_response" {
+#     rest_api_id = aws_api_gateway_rest_api.api.id
+#     resource_id = aws_api_gateway_resource.proxy.id
+#     http_method = aws_api_gateway_method.proxy_method.http_method
+#     status_code = "200"
+#     response_parameters = {
+#       "method.response.header.Access-Control-Allow-Origin" = true
+#       "method.response.header.Access-Control-Allow-Headers" = true
+#       "method.response.header.Access-Control-Allow-Methods" = true
+#     }
+# }
 
 resource "aws_api_gateway_integration" "proxy_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
@@ -147,24 +143,24 @@ resource "aws_api_gateway_integration" "proxy_integration" {
     type = "HTTP_PROXY" # Might change to HTTP_PROXY
     integration_http_method = "ANY"
     # Load balancer knows that port 3000 is the backend application
-    uri = "http://${var.lb_dns_name}:3000/{proxy+}"
+    uri = "http://${var.lb_dns_name}:3000/{proxy}"
     request_parameters = {
       "integration.request.path.proxy" = "method.request.path.proxy"
     }
     timeout_milliseconds = 29000
 }
 
-resource "aws_api_gateway_integration_response" "proxy_integration_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.proxy.id
-    http_method = aws_api_gateway_method.proxy_method.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
-      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-      "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
-    }
-}
+# resource "aws_api_gateway_integration_response" "proxy_integration_response" {
+#     rest_api_id = aws_api_gateway_rest_api.api.id
+#     resource_id = aws_api_gateway_resource.proxy.id
+#     http_method = aws_api_gateway_method.proxy_method.http_method
+#     status_code = "200"
+#     response_parameters = {
+#       "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
+#       "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+#       "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
+#     }
+# }
 
 # custom_domain_name and custom_domain_zone_id are output and used in the dns module.
 resource "aws_api_gateway_domain_name" "custom_domain" {
