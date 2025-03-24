@@ -105,7 +105,8 @@ resource "aws_iam_policy" "lambda_exec_policy" {
                     "kms:Decrypt"
                 ],
                 Resource = [
-                    "arn:aws:ssm:${var.region}:${var.account_id}:parameter/interview-prep/${var.environment}/*"
+                    "arn:aws:ssm:${var.region}:${var.account_id}:parameter/interview-prep/${var.environment}/*",
+                    "arn:aws:kms:${var.region}:${var.account_id}:key/169ce983-7b59-4ff6-9c74-533af48cf478"
                 ]
             },
         ]
