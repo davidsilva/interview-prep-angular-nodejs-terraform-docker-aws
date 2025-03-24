@@ -152,6 +152,7 @@ jobs:
             sleep 5
           done
 
+      # Problem to address: if error occurs in migration, the deployment should not proceed. Right now an error is logged but process continues.
       - name: Invoke Lambda function for migrations
         run: |
           aws lambda invoke \
