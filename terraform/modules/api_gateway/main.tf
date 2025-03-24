@@ -63,9 +63,15 @@ resource "aws_api_gateway_method_response" "health_response" {
     status_code = "200"
 }
 
-resource "aws_api_gateway_resource" "proxy" {
+resource "aws_api_gateway_resource" "v0" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+    path_part   = "v0"
+}
+
+resource "aws_api_gateway_resource" "proxy" {
+    rest_api_id = aws_api_gateway_rest_api.api.id
+    parent_id   = aws_api_gateway_resource.v0.id
     path_part   = "{proxy+}"
 
     depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.

@@ -1,5 +1,5 @@
 export const environment = {
     production: true,
-    apiBaseUrl: 'https://api.prod.interviewprep.onyxdevtutorials.com',
+    apiBaseUrl: 'https://api.prod.interviewprep.onyxdevtutorials.com/v0',
     isLocal: false,
 };
