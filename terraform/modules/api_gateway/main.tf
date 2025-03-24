@@ -26,60 +26,6 @@ resource "aws_api_gateway_usage_plan" "api_usage_plan" {
   }
 }
 
-resource "aws_api_gateway_resource" "v0" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "v0"
-}
-
-resource "aws_api_gateway_method" "v0_options" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.v0.id
-  http_method = "OPTIONS"
-  authorization = "NONE"
-  request_parameters = {
-    "method.request.header.Origin" = false,
-    "method.request.header.Access-Control-Request-Headers" = false,
-    "method.request.header.Access-Control-Request-Method" = false
-  }
-}
-
-resource "aws_api_gateway_method_response" "v0_options_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.v0.id
-  http_method = aws_api_gateway_method.v0_options.http_method
-  status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-  }
-}
-
-resource "aws_api_gateway_integration" "v0_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.v0.id
-  http_method = aws_api_gateway_method.v0_options.http_method
-  type = "MOCK"
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_integration_response" "v0_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.v0.id
-  http_method = aws_api_gateway_method.v0_options.http_method
-  status_code = "200"
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS'"
-  }
-
-  depends_on = [ aws_api_gateway_integration.v0_options_integration ]
-}
-
 resource "aws_api_gateway_resource" "health" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     parent_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -117,69 +63,17 @@ resource "aws_api_gateway_method_response" "health_response" {
     status_code = "200"
 }
 
-resource "aws_api_gateway_resource" "users" {
+resource "aws_api_gateway_resource" "proxy" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    parent_id   = aws_api_gateway_resource.v0.id
-    path_part   = "users"
+    parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+    path_part   = "{proxy+}"
 
     depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.
 }
 
-resource "aws_api_gateway_method" "users_method" {
+resource "aws_api_gateway_method" "proxy_options" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = "ANY" # Handle every type of HTTP request
-    authorization = "NONE" # No authorization required (yet)
-    api_key_required = false
-    request_parameters = {
-      "method.request.path.proxy" = true,
-      "method.request.header.Origin" = false,
-      "method.request.header.Access-Control-Request-Headers" = false,
-      "method.request.header.Access-Control-Request-Method" = false
-    }
-}
-
-resource "aws_api_gateway_method_response" "users_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_method.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = true
-      "method.response.header.Access-Control-Allow-Headers" = true
-      "method.response.header.Access-Control-Allow-Methods" = true
-    }
-}
-
-resource "aws_api_gateway_integration" "users_integration" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_method.http_method
-    type = "HTTP_PROXY"
-    integration_http_method = "ANY"
-    # Load balancer knows that port 3000 is the backend application
-    uri = "http://${var.lb_dns_name}:3000/users/{proxy}"
-    request_parameters = {
-      "integration.request.path.proxy" = "method.request.path.proxy"
-    }
-    timeout_milliseconds = 29000
-}
-
-resource "aws_api_gateway_integration_response" "users_integration_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_method.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
-      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-      "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
-    }
-}
-
-resource "aws_api_gateway_method" "users_options" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
+    resource_id = aws_api_gateway_resource.proxy.id
     http_method = "OPTIONS"
     authorization = "NONE"
     request_parameters = {
@@ -189,10 +83,10 @@ resource "aws_api_gateway_method" "users_options" {
     }
 }
 
-resource "aws_api_gateway_method_response" "users_options_response" {
+resource "aws_api_gateway_method_response" "proxy_options_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_options.http_method
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_options.http_method
     status_code = "200"
     response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = true
@@ -201,20 +95,20 @@ resource "aws_api_gateway_method_response" "users_options_response" {
     }
 }
 
-resource "aws_api_gateway_integration" "users_options_integration" {
+resource "aws_api_gateway_integration" "proxy_options_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_options.http_method
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_options.http_method
     type = "MOCK"
     request_templates = {
       "application/json" = "{\"statusCode\": 200}"
     }
 }
 
-resource "aws_api_gateway_integration_response" "users_options_integration_response" {
+resource "aws_api_gateway_integration_response" "proxy_options_integration_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.users.id
-    http_method = aws_api_gateway_method.users_options.http_method
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_options.http_method
     status_code = "200"
     response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
@@ -223,32 +117,21 @@ resource "aws_api_gateway_integration_response" "users_options_integration_respo
     }
 }
 
-resource "aws_api_gateway_resource" "products" {
+resource "aws_api_gateway_method" "proxy_method" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    parent_id   = aws_api_gateway_resource.v0.id
-    path_part   = "products"
-
-    depends_on = [ aws_api_gateway_rest_api.api ] # Ensure the API is created before creating the resource.
-}
-
-resource "aws_api_gateway_method" "products_method" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
+    resource_id = aws_api_gateway_resource.proxy.id
     http_method = "ANY" # Handle every type of HTTP request
     authorization = "NONE" # No authorization required (yet)
     api_key_required = false
     request_parameters = {
       "method.request.path.proxy" = true,
-      "method.request.header.Origin" = false,
-      "method.request.header.Access-Control-Request-Headers" = false,
-      "method.request.header.Access-Control-Request-Method" = false
     }
 }
 
-resource "aws_api_gateway_method_response" "products_response" {
+resource "aws_api_gateway_method_response" "proxy_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_method.http_method
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_method.http_method
     status_code = "200"
     response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = true
@@ -257,75 +140,29 @@ resource "aws_api_gateway_method_response" "products_response" {
     }
 }
 
-resource "aws_api_gateway_integration" "products_integration" {
+resource "aws_api_gateway_integration" "proxy_integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_method.http_method
-    type = "HTTP_PROXY"
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_method.http_method
+    type = "HTTP_PROXY" # Might change to HTTP_PROXY
     integration_http_method = "ANY"
     # Load balancer knows that port 3000 is the backend application
-    uri = "http://${var.lb_dns_name}:3000/products/{proxy}"
+    uri = "http://${var.lb_dns_name}:3000/{proxy+}"
     request_parameters = {
       "integration.request.path.proxy" = "method.request.path.proxy"
     }
     timeout_milliseconds = 29000
 }
 
-resource "aws_api_gateway_integration_response" "products_integration_response" {
+resource "aws_api_gateway_integration_response" "proxy_integration_response" {
     rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_method.http_method
+    resource_id = aws_api_gateway_resource.proxy.id
+    http_method = aws_api_gateway_method.proxy_method.http_method
     status_code = "200"
     response_parameters = {
       "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
       "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
       "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,PUT,PATCH,POST,DELETE'"
-    }
-}
-
-resource "aws_api_gateway_method" "products_options" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = "OPTIONS"
-    authorization = "NONE"
-    request_parameters = {
-      "method.request.header.Origin" = false,
-      "method.request.header.Access-Control-Request-Headers" = false,
-      "method.request.header.Access-Control-Request-Method" = false
-    }
-}
-
-resource "aws_api_gateway_method_response" "products_options_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_options.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = true
-      "method.response.header.Access-Control-Allow-Headers" = true
-      "method.response.header.Access-Control-Allow-Methods" = true
-    }
-}
-
-resource "aws_api_gateway_integration" "products_options_integration" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_options.http_method
-    type = "MOCK"
-    request_templates = {
-      "application/json" = "{\"statusCode\": 200}"
-    }
-}
-
-resource "aws_api_gateway_integration_response" "products_options_integration_response" {
-    rest_api_id = aws_api_gateway_rest_api.api.id
-    resource_id = aws_api_gateway_resource.products.id
-    http_method = aws_api_gateway_method.products_options.http_method
-    status_code = "200"
-    response_parameters = {
-      "method.response.header.Access-Control-Allow-Origin" = "'${var.cors_origin}'"
-      "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
-      "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS'"
     }
 }
 
@@ -363,6 +200,16 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     lifecycle {
         create_before_destroy = true
     }
+
+  depends_on = [
+    aws_api_gateway_method.health_get,
+    aws_api_gateway_integration.health_integration,
+    aws_api_gateway_method.proxy_options,
+    aws_api_gateway_integration.proxy_options_integration,
+    aws_api_gateway_method.proxy_method,
+    aws_api_gateway_integration.proxy_integration
+  ]
+
 }
 
 # An API Gateway stage is a logical reference to a lifecycle state of your API (for example, dev, test, prod). Stages are used to manage and deploy different versions of your API, allowing you to test changes in a development environment before promoting them to production.
