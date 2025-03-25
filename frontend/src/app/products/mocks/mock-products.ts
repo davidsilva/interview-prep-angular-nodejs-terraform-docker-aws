@@ -12,6 +12,7 @@ export const mockProducts: Product[] = [
     created_at: new Date(),
     updated_at: new Date(),
     status: ProductStatus.AVAILABLE,
+    version: 1,
   },
   {
     id: 2,
@@ -21,5 +22,6 @@ export const mockProducts: Product[] = [
     created_at: new Date(),
     updated_at: new Date(),
     status: ProductStatus.AVAILABLE,
+    version: 1,
   },
 ];

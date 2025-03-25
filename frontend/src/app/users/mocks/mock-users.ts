@@ -9,6 +9,7 @@ export const mockUsers: User[] = [
     status: UserStatus.ACTIVE,
     created_at: new Date(),
     updated_at: new Date(),
+    version: 1,
   },
   {
     id: 2,
@@ -18,5 +19,6 @@ export const mockUsers: User[] = [
     status: UserStatus.ACTIVE,
     created_at: new Date(),
     updated_at: new Date(),
+    version: 1,
   },
 ];

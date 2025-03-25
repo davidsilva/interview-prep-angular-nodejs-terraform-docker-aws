@@ -58,10 +58,18 @@ describe('ProductsUpdateComponent', () => {
       status: ProductStatus.AVAILABLE,
     } as Omit<Product, 'id'>;
 
+    const mockProduct = mockProducts[0];
+
+    spyOn(mockProductsService, 'getProduct').and.returnValue(of(mockProduct));
+
+    component.ngOnInit();
+    expect(component.productData).toEqual(mockProduct);
+
     spyOn(mockProductsService, 'updateProduct').and.returnValue(
       of({
         ...formData,
         id: 1,
+        version: 2,
       })
     );
 
@@ -69,7 +77,8 @@ describe('ProductsUpdateComponent', () => {
 
     expect(mockProductsService.updateProduct).toHaveBeenCalledWith(
       '1',
-      formData
+      {...formData,
+      version: 1},
     );
   });
 
@@ -81,10 +90,18 @@ describe('ProductsUpdateComponent', () => {
       status: ProductStatus.AVAILABLE,
     } as Omit<Product, 'id'>;
 
+    const mockProduct = mockProducts[0];
+
+    spyOn(mockProductsService, 'getProduct').and.returnValue(of(mockProduct));
+
+    component.ngOnInit();
+    expect(component.productData).toEqual(mockProduct);
+
     spyOn(mockProductsService, 'updateProduct').and.returnValue(
       of({
         ...formData,
         id: 1,
+        version: 2,
       })
     );
 
@@ -102,6 +119,13 @@ describe('ProductsUpdateComponent', () => {
       price: 100,
       status: ProductStatus.AVAILABLE,
     } as Omit<Product, 'id'>;
+
+    const mockProduct = mockProducts[0];
+
+    spyOn(mockProductsService, 'getProduct').and.returnValue(of(mockProduct));
+
+    component.ngOnInit();
+    expect(component.productData).toEqual(mockProduct);
 
     spyOn(mockProductsService, 'updateProduct').and.returnValue(
       throwError(() => new Error('Simulated network error'))

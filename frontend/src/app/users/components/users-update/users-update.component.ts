@@ -20,12 +20,13 @@ export class UsersUpdateComponent implements OnInit {
   userId = input.required<string>();
 
   userData: User | null = null;
+  loading = true;
 
   handleFormSubmit(formData: Omit<User, 'id'>): void {
     console.log(formData);
     if (this.userData) {
       const userToUpdate = { ...formData, version: this.userData.version } as User;
-      this.usersService.updateUser(this.userId(), formData).subscribe({
+      this.usersService.updateUser(this.userId(), userToUpdate).subscribe({
         next: (user) => {
           console.log('User updated:', user);
           this.router.navigate(['/users']);
@@ -47,6 +48,7 @@ export class UsersUpdateComponent implements OnInit {
       next: (user) => {
         console.log('users-update component User:', user);
         this.userData = user;
+        this.loading = false;
       },
       error: (error) => {
         const errorMessage = (error as Error).message;
@@ -54,6 +56,7 @@ export class UsersUpdateComponent implements OnInit {
         this.snackBar.open(errorMessage, 'Close', {
           duration: 5000
         });
+        this.loading = false;
       },
       complete: () => console.log('User retrieval complete'),
     });

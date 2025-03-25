@@ -57,16 +57,25 @@ describe('UsersUpdateComponent', () => {
       status: UserStatus.ACTIVE,
     } as Omit<User, 'id'>;
 
-    spyOn(mockUsersService, 'updateUser').and.returnValue(
-      of({
-        ...formData,
-        id: 1,
-      })
-    );
+    const mockUser = mockUsers[0];
+
+    spyOn(mockUsersService, 'getUser').and.returnValue(of(mockUser));
+
+    component.ngOnInit();
+    expect(component.userData).toEqual(mockUser);
+
+    spyOn(mockUsersService, 'updateUser').and.returnValue(of({
+      ...formData,
+      id: 1,
+      version: 2,
+    }));
 
     component.handleFormSubmit(formData);
 
-    expect(mockUsersService.updateUser).toHaveBeenCalledWith('1', formData);
+    expect(mockUsersService.updateUser).toHaveBeenCalledWith('1', {
+      ...formData,
+      version: 1,
+    });
   });
 
   it('should navigate to /users after successful update', () => {
@@ -77,10 +86,18 @@ describe('UsersUpdateComponent', () => {
       status: UserStatus.ACTIVE,
     } as Omit<User, 'id'>;
 
+    const mockUser = mockUsers[0];
+
+    spyOn(mockUsersService, 'getUser').and.returnValue(of(mockUser));
+
+    component.ngOnInit();
+    expect(component.userData).toEqual(mockUser);
+
     spyOn(mockUsersService, 'updateUser').and.returnValue(
       of({
         ...formData,
         id: 1,
+        version: 2,
       })
     );
 
@@ -98,6 +115,13 @@ describe('UsersUpdateComponent', () => {
       email: 'jerry.doe@xyz.com',
       status: UserStatus.ACTIVE,
     } as Omit<User, 'id'>;
+
+    const mockUser = mockUsers[0];
+
+    spyOn(mockUsersService, 'getUser').and.returnValue(of(mockUser));
+
+    component.ngOnInit();
+    expect(component.userData).toEqual(mockUser);
 
     spyOn(mockUsersService, 'updateUser').and.returnValue(
       throwError(() => new Error('Simulated network error'))
