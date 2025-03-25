@@ -27,6 +27,9 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (!product) {
       return next(new NotFoundError('Product not found'));
     } else {
+      if (!product.version) {
+        product.version = 1;
+      }
       res.json(product);
     }
   } catch (error) {

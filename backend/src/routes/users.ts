@@ -27,6 +27,9 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (!user) {
       return next(new NotFoundError('User not found'));
     } else {
+      if (!user.version) {
+        user.version = 1;
+      }
       res.json(user);
     }
   } catch (error) {

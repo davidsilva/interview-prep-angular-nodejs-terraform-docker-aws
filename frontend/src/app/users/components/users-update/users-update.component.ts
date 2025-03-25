@@ -23,20 +23,23 @@ export class UsersUpdateComponent implements OnInit {
 
   handleFormSubmit(formData: Omit<User, 'id'>): void {
     console.log(formData);
-    this.usersService.updateUser(this.userId(), formData).subscribe({
-      next: (user) => {
-        console.log('User updated:', user);
-        this.router.navigate(['/users']);
-      },
-      error: (error) => {
-        const errorMessage = (error as Error).message;
-        console.error('Error updating user:', error);
-        this.snackBar.open(errorMessage, 'Close', {
-          duration: 5000,
-        });
-      },
-      complete: () => console.log('User update complete'),
-    });
+    if (this.userData) {
+      const userToUpdate = { ...formData, version: this.userData.version } as User;
+      this.usersService.updateUser(this.userId(), formData).subscribe({
+        next: (user) => {
+          console.log('User updated:', user);
+          this.router.navigate(['/users']);
+        },
+        error: (error) => {
+          const errorMessage = (error as Error).message;
+          console.error('Error updating user:', error);
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: 5000,
+          });
+        },
+        complete: () => console.log('User update complete'),
+      });
+    }
   }
 
   ngOnInit(): void {
