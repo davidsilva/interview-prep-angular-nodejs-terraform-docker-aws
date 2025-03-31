@@ -42,6 +42,8 @@ services:
     # command: tail -f /dev/null
     networks:
       - devnetwork
+    volumes:
+      - ${HOST_PROJECT_PATH}/backend:/app/backend # Mount the backend code to the container for live testing
 
 volumes:
   postgres-test-data:
