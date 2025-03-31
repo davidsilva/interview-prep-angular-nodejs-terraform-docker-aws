@@ -23,10 +23,10 @@ const config: Config = {
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: [
-    "src/**/*.ts",
-    "!src/__tests__/**/*.ts",
-    "!src/**/*.test.ts",
-    "!src/**/*.spec.ts",
+    'src/**/*.ts',
+    '!src/__tests__/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts',
   ],
 
   // The directory where Jest should output its coverage files
@@ -159,7 +159,7 @@ const config: Config = {
   // setupFiles: [],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setupTests.ts'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
@@ -181,10 +181,7 @@ const config: Config = {
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/dist/",
-  ],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   // testRegex: [],
@@ -213,11 +210,7 @@ const config: Config = {
 
   // An array of regexp patterns that are matched against all source file paths before re-running tests in watch mode
   // "Because jest-stare writes *.js files when generating a report, you may get an infinite loop when using jest-stare and jest --watch." https://www.npmjs.com/package/jest-stare
-  watchPathIgnorePatterns: [
-    "/node_modules/",
-    "/dist/",
-    ".*jest-stare.*\\.js",
-  ],
+  watchPathIgnorePatterns: ['/node_modules/', '/dist/', '.*jest-stare.*\\.js'],
 
   // Whether to use watchman for file crawling
   // watchman: true,
