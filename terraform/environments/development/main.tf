@@ -66,6 +66,8 @@ module "ecs" {
   db_password = var.db_password
   frontend_target_group_arn = module.load_balancer.frontend_target_group_arn
   backend_target_group_arn = module.load_balancer.backend_target_group_arn
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id = module.cognito.user_pool_client_ids["web_app"]
 }
 
 module "iam" {

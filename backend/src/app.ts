@@ -9,6 +9,7 @@ import { logger } from './middleware/logger';
 import knex from 'knex';
 import knexConfig from './knexFile';
 import { Request, Response, NextFunction } from 'express-serve-static-core';
+import { attachUserGroups } from './middleware/authMiddleware';
 
 const app = express();
 app.use(bodyParser.json());
@@ -40,7 +41,8 @@ if (!app.get('db')) {
 
 app.use(
   '/users',
-  (req: Request, res: Response, next: NextFunction) => {
+  attachUserGroups(),
+  async (req: Request, res: Response, next: NextFunction) => {
     req.db = app.get('db');
     next();
   },
@@ -49,6 +51,7 @@ app.use(
 
 app.use(
   '/products',
+  attachUserGroups(),
   async (req: Request, res: Response, next: NextFunction) => {
     const db = app.get('db');
     req.db = db;

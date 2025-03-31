@@ -6,14 +6,14 @@ import {
   Product,
   ProductStatus,
 } from '@onyxdevtutorials/interview-prep-shared';
-import retry from "retry";
+import retry from 'retry';
 
 const db = knex(knexConfig['test_products']);
 
 const productsPath = '/products';
 
 const waitForDb = async (): Promise<void> => {
-    const operation = retry.operation({
+  const operation = retry.operation({
     retries: 10,
     factor: 2,
     minTimeout: 2000,
@@ -35,10 +35,9 @@ const waitForDb = async (): Promise<void> => {
   });
 };
 
-
 beforeAll(async () => {
   await waitForDb();
-  
+
   await db.migrate.latest();
 
   await db.seed.run();
@@ -53,11 +52,13 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await db.raw('BEGIN')
+  jest.clearAllMocks();
+
+  await db.raw('BEGIN');
 });
 
 afterEach(async () => {
-  await db.raw('ROLLBACK')
+  await db.raw('ROLLBACK');
 });
 
 describe('GET /api/v0/products', () => {
@@ -94,7 +95,22 @@ describe('GET /api/v0/products/:id', () => {
 });
 
 describe('POST /api/v0/products', () => {
-  it('should create a new product', async () => {
+  it('should return a 401 if the user is not authenticated', async () => {
+    const newProduct: Omit<Product, 'id'> = {
+      name: 'New Product',
+      price: 100,
+      description: 'New product description',
+      status: ProductStatus.AVAILABLE,
+    };
+    const response = await request(app).post(productsPath).send(newProduct);
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({
+      message: 'Unauthorized: No user groups found',
+    });
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
     const newProduct: Omit<Product, 'id'> = {
       name: 'New Product',
       price: 100,
@@ -102,7 +118,30 @@ describe('POST /api/v0/products', () => {
       status: ProductStatus.AVAILABLE,
     };
 
-    const response = await request(app).post(productsPath).send(newProduct);
+    const response = await request(app)
+      .post(productsPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send(newProduct);
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      message: 'Forbidden: You do not have permission to access this resource',
+    });
+  });
+
+  it('should create a new product', async () => {
+    const token = 'valid-token-with-admin';
+    const newProduct: Omit<Product, 'id'> = {
+      name: 'New Product',
+      price: 100,
+      description: 'New product description',
+      status: ProductStatus.AVAILABLE,
+    };
+
+    const response = await request(app)
+      .post(productsPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send(newProduct);
 
     expect(response.status).toBe(201);
     expect(response.body.name).toBe(newProduct.name);
@@ -111,13 +150,17 @@ describe('POST /api/v0/products', () => {
   });
 
   it('should return a 400 for a product with missing fields', async () => {
+    const token = 'valid-token-with-admin';
     const newProduct: Omit<Product, 'id' | 'description'> = {
       name: 'New Product',
       price: 100,
       status: ProductStatus.AVAILABLE,
     };
 
-    const response = await request(app).post(productsPath).send(newProduct);
+    const response = await request(app)
+      .post(productsPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send(newProduct);
 
     expect(response.status).toBe(400);
   });
@@ -126,7 +169,43 @@ describe('POST /api/v0/products', () => {
 });
 
 describe('PUT /api/v0/products/:id', () => {
+  it('should return a 401 if the user is not authenticated', async () => {
+    const updatedProduct: Omit<Product, 'id'> = {
+      name: 'Updated Product',
+      price: 200,
+      description: 'Updated product description',
+      status: ProductStatus.AVAILABLE,
+    };
+    const response = await request(app)
+      .put(`${productsPath}/1`)
+      .send(updatedProduct);
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({
+      message: 'Unauthorized: No user groups found',
+    });
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const updatedProduct: Omit<Product, 'id'> = {
+      name: 'Updated Product',
+      price: 200,
+      description: 'Updated product description',
+      status: ProductStatus.AVAILABLE,
+    };
+    const response = await request(app)
+      .put(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedProduct);
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      message: 'Forbidden: You do not have permission to access this resource',
+    });
+  });
+
   it('should update an existing product', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Omit<Product, 'id'> = {
       name: 'Updated Product',
       price: 200,
@@ -135,7 +214,10 @@ describe('PUT /api/v0/products/:id', () => {
       version: 1,
     };
 
-    const response = await request(app).put(`${productsPath}/1`).send(updatedProduct);
+    const response = await request(app)
+      .put(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedProduct);
 
     expect(response.status).toBe(200);
     expect(response.body.name).toBe(updatedProduct.name);
@@ -146,6 +228,7 @@ describe('PUT /api/v0/products/:id', () => {
   });
 
   it('should return a 400 for a product with missing fields', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Omit<Product, 'id' | 'description'> = {
       name: 'Updated Product',
       price: 200,
@@ -153,12 +236,16 @@ describe('PUT /api/v0/products/:id', () => {
       version: 1,
     };
 
-    const response = await request(app).put(`${productsPath}/1`).send(updatedProduct);
+    const response = await request(app)
+      .put(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedProduct);
 
     expect(response.status).toBe(400);
   });
 
   it('should return a 404 for a non-existent product', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Omit<Product, 'id'> = {
       name: 'Updated Product',
       price: 200,
@@ -169,12 +256,14 @@ describe('PUT /api/v0/products/:id', () => {
 
     const response = await request(app)
       .put(`${productsPath}/999`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedProduct);
 
     expect(response.status).toBe(404);
   });
 
   it('PUT should return a 409 conflict when there is a version mismatch', async () => {
+    const token = 'valid-token-with-admin';
     const product: Omit<Product, 'id'> = {
       name: 'Original Product',
       price: 100,
@@ -182,7 +271,9 @@ describe('PUT /api/v0/products/:id', () => {
       status: ProductStatus.AVAILABLE,
     };
 
-    const [createdProduct] = await db('products').insert(product).returning('*');
+    const [createdProduct] = await db('products')
+      .insert(product)
+      .returning('*');
 
     const firstUpdate: Partial<Product> = {
       ...createdProduct,
@@ -191,8 +282,9 @@ describe('PUT /api/v0/products/:id', () => {
 
     const firstResponse = await request(app)
       .put(`${productsPath}/${createdProduct.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(firstUpdate);
-    
+
     expect(firstResponse.status).toBe(200);
 
     // Intentionally create a version mismatch
@@ -204,18 +296,57 @@ describe('PUT /api/v0/products/:id', () => {
 
     const secondResponse = await request(app)
       .put(`${productsPath}/${createdProduct.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(secondUpdate);
 
     expect(secondResponse.status).toBe(409);
-    expect(secondResponse.body.error).toBe('Conflict: Product has been updated by another request. Please reload the page and try again.');
+    expect(secondResponse.body.error).toBe(
+      'Conflict: Product has been updated by another request. Please reload the page and try again.'
+    );
   });
-
 
   it.todo('should handle other errors');
 });
 
 describe('PATCH /api/v0/products/:id', () => {
+  it('should return a 401 if the user is not authenticated', async () => {
+    const updatedProduct: Partial<Product> = {
+      name: 'Updated Product',
+      price: 200,
+      description: 'Updated product description',
+      status: ProductStatus.AVAILABLE,
+      version: 1,
+    };
+    const response = await request(app)
+      .patch(`${productsPath}/1`)
+      .send(updatedProduct);
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({
+      message: 'Unauthorized: No user groups found',
+    });
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const updatedProduct: Partial<Product> = {
+      name: 'Updated Product',
+      price: 200,
+      description: 'Updated product description',
+      status: ProductStatus.AVAILABLE,
+      version: 1,
+    };
+    const response = await request(app)
+      .patch(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedProduct);
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      message: 'Forbidden: You do not have permission to access this resource',
+    });
+  });
+
   it('should update an existing product', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Partial<Product> = {
       name: 'Updated Product',
       version: 1,
@@ -223,6 +354,7 @@ describe('PATCH /api/v0/products/:id', () => {
 
     const response = await request(app)
       .patch(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedProduct);
 
     expect(response.status).toBe(200);
@@ -231,6 +363,7 @@ describe('PATCH /api/v0/products/:id', () => {
   });
 
   it('should not return a 400 for a product with "missing" fields (should return 200)', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Partial<Product> = {
       name: 'Updated Product',
       description: 'Updated Product Description',
@@ -239,12 +372,14 @@ describe('PATCH /api/v0/products/:id', () => {
 
     const response = await request(app)
       .patch(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedProduct);
 
     expect(response.status).toBe(200);
   });
 
   it('should return a 404 for a non-existent product', async () => {
+    const token = 'valid-token-with-admin';
     const updatedProduct: Partial<Product> = {
       name: 'Updated Product',
       version: 1,
@@ -252,12 +387,14 @@ describe('PATCH /api/v0/products/:id', () => {
 
     const response = await request(app)
       .patch(`${productsPath}/999`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedProduct);
 
     expect(response.status).toBe(404);
   });
 
   it('should return a 409 conflict when there is a version mismatch', async () => {
+    const token = 'valid-token-with-admin';
     const product: Omit<Product, 'id'> = {
       name: 'Original Product',
       price: 100,
@@ -266,7 +403,9 @@ describe('PATCH /api/v0/products/:id', () => {
       version: 1,
     };
 
-    const [createdProduct] = await db('products').insert(product).returning('*');
+    const [createdProduct] = await db('products')
+      .insert(product)
+      .returning('*');
 
     const firstUpdate: Partial<Product> = {
       name: 'First Update',
@@ -275,6 +414,7 @@ describe('PATCH /api/v0/products/:id', () => {
 
     const firstResponse = await request(app)
       .patch(`${productsPath}/${createdProduct.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(firstUpdate);
 
     expect(firstResponse.status).toBe(200);
@@ -287,10 +427,13 @@ describe('PATCH /api/v0/products/:id', () => {
 
     const secondResponse = await request(app)
       .patch(`${productsPath}/${createdProduct.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(secondUpdate);
 
     expect(secondResponse.status).toBe(409);
-    expect(secondResponse.body.error).toBe('Conflict: Product has been updated by another request. Please reload the page and try again.');
+    expect(secondResponse.body.error).toBe(
+      'Conflict: Product has been updated by another request. Please reload the page and try again.'
+    );
   });
 
   it.todo("should handle a validation error if field isn't in schema at all");
@@ -299,13 +442,38 @@ describe('PATCH /api/v0/products/:id', () => {
 });
 
 describe('DELETE /api/v0/products/:id', () => {
-  it('should delete an existing product', async () => {
+  it('should return a 401 if the user is not authenticated', async () => {
     const response = await request(app).delete(`${productsPath}/1`);
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({
+      message: 'Unauthorized: No user groups found',
+    });
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const response = await request(app)
+      .delete(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      message: 'Forbidden: You do not have permission to access this resource',
+    });
+  });
+
+  it('should delete an existing product', async () => {
+    const token = 'valid-token-with-admin';
+    const response = await request(app)
+      .delete(`${productsPath}/1`)
+      .set('Authorization', `Bearer ${token}`);
     expect(response.status).toBe(204);
   });
 
   it('should return a 404 for a non-existent product', async () => {
-    const response = await request(app).delete(`${productsPath}/999`);
+    const token = 'valid-token-with-admin';
+    const response = await request(app)
+      .delete(`${productsPath}/999`)
+      .set('Authorization', `Bearer ${token}`);
     expect(response.status).toBe(404);
   });
 

@@ -157,7 +157,8 @@ resource "aws_iam_policy" "authenticated_policy" {
           "execute-api:Invoke"
         ],
         Resource = [
-          "arn:aws:execute-api:${var.region}:${var.account_id}:${var.api_gateway_rest_api_id}/*/*",
+          "arn:aws:execute-api:${var.region}:${var.account_id}:${var.api_gateway_rest_api_id}/*/GET/v0/products",
+          "arn:aws:execute-api:${var.region}:${var.account_id}:${var.api_gateway_rest_api_id}/*/GET/v0/users",
         ]
       }
     ]
@@ -175,4 +176,38 @@ resource "aws_cognito_identity_pool_roles_attachment" "identity_pool_roles_attac
     unauthenticated = aws_iam_role.unauthenticated_role.arn
     authenticated = aws_iam_role.authenticated_role.arn
   }
+}
+
+resource "aws_iam_policy" "admin_policy" {
+  name = "${var.environment}-${var.project_name}-admin-policy"
+  description = "Policy for admin users"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "execute-api:Invoke"
+        ],
+        Resource = [
+          "arn:aws:execute-api:${var.region}:${var.account_id}:${var.api_gateway_rest_api_id}/*/*/v0/products",
+          "arn:aws:execute-api:${var.region}:${var.account_id}:${var.api_gateway_rest_api_id}/*/*/v0/users",
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_cognito_user_group" "regular_users" {
+  name = "RegularUsers"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description = "Group for regular authenticated users"
+  precedence = 10 # Lower numbers have higher precedence
+}
+
+resource "aws_cognito_user_group" "admin_users" {
+  name = "AdminUsers"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description = "Group for admin users"
+  precedence = 1 # Lower numbers have higher precedence
 }

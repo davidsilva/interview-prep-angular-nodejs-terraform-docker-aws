@@ -1,16 +1,16 @@
 import request from 'supertest';
-import app from '../../app';
 import knex from 'knex';
 import knexConfig from '../../knexFile';
 import { User, UserStatus } from '@onyxdevtutorials/interview-prep-shared';
-import retry from "retry";
+import retry from 'retry';
+import app from '../../app';
 
 const db = knex(knexConfig['test_users']);
 
 const usersPath = '/users';
 
 const waitForDb = async (): Promise<void> => {
-    const operation = retry.operation({
+  const operation = retry.operation({
     retries: 10,
     factor: 2,
     minTimeout: 2000,
@@ -49,13 +49,16 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await db.raw('BEGIN')
+  jest.clearAllMocks();
+
+  await db.raw('BEGIN');
 });
 
 afterEach(async () => {
-  await db.raw('ROLLBACK')
+  await db.raw('ROLLBACK');
 });
 
+// GET is open to all users. Doesn't matter if they are authenticated or not or whether they belong to a group.
 describe('GET /api/v0/users', () => {
   it('should return a list of users', async () => {
     const response = await request(app).get(`${usersPath}`);
@@ -81,8 +84,41 @@ describe('GET /api/v0/users/:id', () => {
   it.todo('should handle non-404 errors');
 });
 
+// The POST endpoint is protected by the requireGroup middleware, which means only users in the AdminUsers group can create a new user.
 describe('POST /api/v0/users', () => {
+  // No authorization header, no token, no groups
+  it('should return a 401 if the user is not authenticated', async () => {
+    const response = await request(app).post(usersPath).send({
+      email: 'elvis.presley@graceland.com',
+      first_name: 'Elvis',
+      last_name: 'Presley',
+      status: UserStatus.ACTIVE,
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Unauthorized: No user groups found');
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const response = await request(app)
+      .post(usersPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        email: 'elvis.presley@graceland.com',
+        first_name: 'Elvis',
+        last_name: 'Presley',
+        status: UserStatus.ACTIVE,
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe(
+      'Forbidden: You do not have permission to access this resource'
+    );
+  });
+
   it('should create a new user', async () => {
+    const token = 'valid-token-with-admin';
     const newUser: Omit<User, 'id'> = {
       email: 'elvis.presley@graceland.com',
       first_name: 'Elvis',
@@ -90,7 +126,10 @@ describe('POST /api/v0/users', () => {
       status: UserStatus.ACTIVE,
     };
 
-    const response = await request(app).post(usersPath).send(newUser);
+    const response = await request(app)
+      .post(usersPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send(newUser);
 
     expect(response.status).toBe(201);
     expect(response.body.id).toBeDefined();
@@ -102,13 +141,17 @@ describe('POST /api/v0/users', () => {
   });
 
   it('should return a 400 for a user with missing fields', async () => {
+    const token = 'valid-token-with-admin';
     const newUser: Omit<User, 'id' | 'status'> = {
       email: 'elvis.presley@graceland.com',
       first_name: 'Elvis',
       last_name: 'Presley',
     };
 
-    const response = await request(app).post(usersPath).send(newUser);
+    const response = await request(app)
+      .post(usersPath)
+      .set('Authorization', `Bearer ${token}`)
+      .send(newUser);
 
     expect(response.status).toBe(400);
   });
@@ -116,8 +159,9 @@ describe('POST /api/v0/users', () => {
   it.todo('should handle other errors');
 });
 
+// Only members of the AdminUsers group can update a user via PUT or PATCH.
 describe('PUT /api/v0/users/:id', () => {
-  it('should update an existing user', async () => {
+  it('should return a 401 if the user is not authenticated', async () => {
     const updatedUser: Omit<User, 'id'> = {
       email: 'elvis.presley@graceland.com',
       first_name: 'Elvis',
@@ -127,6 +171,46 @@ describe('PUT /api/v0/users/:id', () => {
     };
 
     const response = await request(app).put(`${usersPath}/1`).send(updatedUser);
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Unauthorized: No user groups found');
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const updatedUser: Omit<User, 'id'> = {
+      email: 'elvis.presley@graceland.com',
+      first_name: 'Elvis',
+      last_name: 'Presley',
+      status: UserStatus.ACTIVE,
+      version: 1,
+    };
+
+    const response = await request(app)
+      .put(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe(
+      'Forbidden: You do not have permission to access this resource'
+    );
+  });
+
+  it('should update an existing user', async () => {
+    const token = 'valid-token-with-admin';
+    const updatedUser: Omit<User, 'id'> = {
+      email: 'elvis.presley@graceland.com',
+      first_name: 'Elvis',
+      last_name: 'Presley',
+      status: UserStatus.ACTIVE,
+      version: 1,
+    };
+
+    const response = await request(app)
+      .put(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(200);
     expect(response.body.email).toBe(updatedUser.email);
@@ -137,18 +221,23 @@ describe('PUT /api/v0/users/:id', () => {
   });
 
   it('should return 400 for a user with missing fields', async () => {
+    const token = 'valid-token-with-admin';
     const updatedUser: Omit<User, 'id' | 'status'> = {
       email: 'elvis.presley@graceland.com',
       first_name: 'Elvis',
       last_name: 'Presley',
     };
 
-    const response = await request(app).put(`${usersPath}/1`).send(updatedUser);
+    const response = await request(app)
+      .put(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(400);
   });
 
   it('should return a 404 for a non-existent user', async () => {
+    const token = 'valid-token-with-admin';
     const updatedUser: Omit<User, 'id'> = {
       email: 'elvis.presley@graceland.com',
       first_name: 'Elvis',
@@ -157,12 +246,16 @@ describe('PUT /api/v0/users/:id', () => {
       version: 1,
     };
 
-    const response = await request(app).put(`${usersPath}/999`).send(updatedUser);
+    const response = await request(app)
+      .put(`${usersPath}/999`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(404);
   });
 
   it('PUT should return a 409 for a user that has been updated by another request', async () => {
+    const token = 'valid-token-with-admin';
     const user: Omit<User, 'id'> = {
       email: 'priscilla.presley@graceland.com',
       first_name: 'Priscilla',
@@ -182,6 +275,7 @@ describe('PUT /api/v0/users/:id', () => {
 
     const firstResponse = await request(app)
       .put(`${usersPath}/${createdUser.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(firstUpdate);
 
     console.log('****** firstResponse:', firstResponse.body);
@@ -197,25 +291,64 @@ describe('PUT /api/v0/users/:id', () => {
 
     const secondResponse = await request(app)
       .put(`${usersPath}/${createdUser.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(secondUpdate);
 
     console.log('****** secondResponse:', secondResponse.body);
-    
+
     expect(secondResponse.status).toBe(409);
-    expect(secondResponse.body.error).toBe('Conflict: User has been updated by another process. Please reload the page and try again.');
+    expect(secondResponse.body.error).toBe(
+      'Conflict: User has been updated by another process. Please reload the page and try again.'
+    );
   });
 
   it.todo('should handle other errors');
 });
 
 describe('PATCH /api/v0/users/:id', () => {
-  it('should update an existing user', async () => {
+  it('should return a 401 if the user is not authenticated', async () => {
     const updatedUser: Partial<User> = {
       email: 'elvis.presley@graceland.com',
       version: 1,
     };
 
-    const response = await request(app).patch(`${usersPath}/1`).send(updatedUser);
+    const response = await request(app)
+      .patch(`${usersPath}/1`)
+      .send(updatedUser);
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Unauthorized: No user groups found');
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const updatedUser: Partial<User> = {
+      email: 'elvis.presley@graceland.com',
+      version: 1,
+    };
+
+    const response = await request(app)
+      .patch(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe(
+      'Forbidden: You do not have permission to access this resource'
+    );
+  });
+
+  it('should update an existing user', async () => {
+    const token = 'valid-token-with-admin';
+    const updatedUser: Partial<User> = {
+      email: 'elvis.presley@graceland.com',
+      version: 1,
+    };
+
+    const response = await request(app)
+      .patch(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(200);
     expect(response.body.email).toBe(updatedUser.email);
@@ -223,27 +356,36 @@ describe('PATCH /api/v0/users/:id', () => {
 
   // The only required field for a PATCH is the version field
   it('should return 400 for a user with "missing" fields', async () => {
+    const token = 'valid-token-with-admin';
     const updatedUser: Partial<User> = {
       email: 'elvis.presley@graceland.com',
     };
 
-    const response = await request(app).patch(`${usersPath}/1`).send(updatedUser);
+    const response = await request(app)
+      .patch(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(400);
   });
 
   it('should return a 404 for a non-existent user', async () => {
+    const token = 'valid-token-with-admin';
     const updatedUser: Partial<User> = {
       email: 'elvis.presley@graceland.com',
       version: 1,
     };
 
-    const response = await request(app).patch(`${usersPath}/999`).send(updatedUser);
+    const response = await request(app)
+      .patch(`${usersPath}/999`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(updatedUser);
 
     expect(response.status).toBe(404);
   });
 
   it('should return a 409 for a user that has been updated by another request', async () => {
+    const token = 'valid-token-with-admin';
     const user: Omit<User, 'id'> = {
       email: 'priscilla.presley@graceland.com',
       first_name: 'Priscilla',
@@ -261,6 +403,7 @@ describe('PATCH /api/v0/users/:id', () => {
 
     const firstResponse = await request(app)
       .patch(`${usersPath}/${createdUser.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(firstUpdate);
 
     expect(firstResponse.status).toBe(200);
@@ -273,23 +416,50 @@ describe('PATCH /api/v0/users/:id', () => {
 
     const secondResponse = await request(app)
       .patch(`${usersPath}/${createdUser.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(secondUpdate);
-    
+
     expect(secondResponse.status).toBe(409);
-    expect(secondResponse.body.error).toBe('Conflict: User has been updated by another process. Please reload the page and try again.');
+    expect(secondResponse.body.error).toBe(
+      'Conflict: User has been updated by another process. Please reload the page and try again.'
+    );
   });
 
   it.todo('should handle other errors');
 });
 
+// Only members of the AdminUsers group can delete a user. This is enforced by the requireGroup middleware.
 describe('DELETE /api/v0/users/:id', () => {
-  it('should delete an existing user', async () => {
+  it('should return a 401 if the user is not authenticated', async () => {
     const response = await request(app).delete(`${usersPath}/1`);
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Unauthorized: No user groups found');
+  });
+
+  it('should return a 403 if the user is not in the AdminUsers group', async () => {
+    const token = 'valid-token-without-groups';
+    const response = await request(app)
+      .delete(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe(
+      'Forbidden: You do not have permission to access this resource'
+    );
+  });
+
+  it('should delete an existing user', async () => {
+    const token = 'valid-token-with-admin';
+    const response = await request(app)
+      .delete(`${usersPath}/1`)
+      .set('Authorization', `Bearer ${token}`);
     expect(response.status).toBe(204);
   });
 
   it('should return a 404 for a non-existent user', async () => {
-    const response = await request(app).delete(`${usersPath}/999`);
+    const token = 'valid-token-with-admin';
+    const response = await request(app)
+      .delete(`${usersPath}/999`)
+      .set('Authorization', `Bearer ${token}`);
     expect(response.status).toBe(404);
   });
 
