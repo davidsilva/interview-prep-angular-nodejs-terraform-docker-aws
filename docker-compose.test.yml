@@ -21,11 +21,17 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=${DATABASE_URL}
     image: interview-prep-frontend-tests:latest
     working_dir: /app/frontend
     command: npm run test -- --watch=false --browsers=ChromeHeadlessNoSandbox
+    # command: npm run test -- --watch=false
     networks:
       - devnetwork
+    volumes:
+      - ${HOST_PROJECT_PATH}/frontend:/app/frontend # Mount the frontend code to the container for live testing
 
   backend-tests:
     build:
