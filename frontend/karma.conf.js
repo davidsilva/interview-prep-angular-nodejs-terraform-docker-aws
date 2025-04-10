@@ -4,12 +4,24 @@
 module.exports = function (config) {
   config.set({
     basePath: "",
-    frameworks: ["jasmine", "@angular-devkit/build-angular"],
+    frameworks: [
+      "jasmine",
+      "karma-typescript",
+      "@angular-devkit/build-angular",
+    ],
+    // files: [{ pattern: "src/**/*.ts", watched: false }],
+    preprocessors: {
+      "**/*.ts": ["karma-typescript"],
+    },
+    karmaTypescriptConfig: {
+      tsconfig: "./tsconfig.json",
+    },
     plugins: [
       require("karma-jasmine"),
       require("karma-chrome-launcher"),
       require("karma-jasmine-html-reporter"),
       require("karma-coverage"),
+      require("karma-typescript"),
       require("@angular-devkit/build-angular/plugins/karma"),
     ],
     client: {
@@ -28,7 +40,7 @@ module.exports = function (config) {
       subdir: ".",
       reporters: [{ type: "html" }, { type: "text-summary" }],
     },
-    reporters: ["progress", "kjhtml"],
+    reporters: ["progress", "karma-typescript"],
     browsers: ["ChromeHeadlessNoSandbox"],
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
