@@ -2,6 +2,35 @@
 
 [Video](https://www.youtube.com/playlist?list=PL7FXjzyGAf4WDBzSv7eUO0vu8-nZV8kTr)
 
+## To Do for v0.1.5
+* Add Cognito module to Terraform:
+  * Set up identity and user pools.
+  * Configure Cognito user pool and user pool client.
+  * Create Cognito identity pool.
+* Add authenticated and unauthenticated roles to IAM module:
+  * Create IAM roles for authenticated and unauthenticated users.
+  * Attach necessary policies to the roles.
+* Add API key and usage plan to API Gateway:
+  * Create an API key in API Gateway.
+  * Create a usage plan and associate it with the API key.
+  * Enable API key requirement for specific API methods.
+* Add authorization to API Gateway:
+  * Configure API Gateway to use Cognito user pool authorizer for protected methods.
+  * Ensure public methods (e.g., GET requests) do not require authorization.
+* Frontend App
+  * Install Amplify Gen 2:
+    * Install Amplify Gen 2 libraries (@aws-amplify/auth and @aws-amplify/core).
+  * Create an authentication service in the frontend: 
+    * Implement methods for getToken(), signIn(), and signOut() using Amplify Auth.
+    * Add unit tests for authentication service.
+  * Create an HTTP interceptor to include the authorization token in the HTTP requests.
+  * Register the interceptor in the app module.
+  * Set up the frontend app to use the API key.
+  * Create custom components for sign-in and sign-out *or* use Authenticator and something prebuilt (if possible) from Amplify (Authenticator component).
+* Backend App
+  * Use middleware to check authorization token and enforce permissions (might not be necessary now).
+* Possible next step: use Lambda function to validate Referer header. This would prevent unauthorized access of the API by unauthorized servers, while CORS is sufficient to block unauthorized web browsers.
+
 This project grew out of wanting to prepare for an interview for a job that would have focused on Angular. As I had been using React exclusively for several months, I needed to refresh my Angular skills. Then I began to add more things to make up for my focus on AWS Amplify. The result is in some ways the opposite of what I have in my previous videos:
 
 * Angular instead of React/NextJS

@@ -1,0 +1,24 @@
+{
+  "name": "getapikey",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Lambda function to get an API key from the SSM Parameter Store",
+  "main": "dist/index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && npm run rename",
+    "rename": "mv dist/index.js dist/index.mjs",
+    "package": "cd dist && zip -r ../get-api-key-package.zip ."
+  },
+  "author": "David Silva",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.714.0",
+    "aws-lambda": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.146",
+    "typescript": "5.7.2",
+    "ts-node": "^10.9.2"
+  }
+}

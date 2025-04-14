@@ -20,10 +20,13 @@ export class ProductsUpdateComponent {
   productId = input.required<string>();
 
   productData: Product | null = null;
+  loading = true;
 
   handleFormSubmit(formData: Omit<Product, 'id'>): void {
     console.log(formData);
-    this.productsService.updateProduct(this.productId(), formData).subscribe({
+    if (this.productData) {
+      const productToUpdate = { ...formData, version: this.productData.version } as Product;
+    this.productsService.updateProduct(this.productId(), productToUpdate).subscribe({
       next: (product) => {
         console.log('Product updated:', product);
         this.router.navigate(['/products']);
@@ -37,6 +40,7 @@ export class ProductsUpdateComponent {
       },
       complete: () => console.log('Product update complete'),
     });
+    }
   }
 
   ngOnInit(): void {
@@ -44,6 +48,7 @@ export class ProductsUpdateComponent {
       next: (product) => {
         console.log('products-update component Product:', product);
         this.productData = product;
+        this.loading = false;
       },
       error: (error) => {
         const errorMessage = (error as Error).message;
@@ -51,6 +56,7 @@ export class ProductsUpdateComponent {
         this.snackBar.open(errorMessage, 'Close', {
           duration: 5000
         });
+        this.loading = false;
       },
       complete: () => console.log('Product retrieval complete'),
     });

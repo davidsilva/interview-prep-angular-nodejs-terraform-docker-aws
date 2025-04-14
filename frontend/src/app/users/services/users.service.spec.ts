@@ -8,6 +8,7 @@ import { mockUsers } from '../mocks/mock-users';
 import { UsersService } from './users.service';
 import { User, UserStatus } from '@onyxdevtutorials/interview-prep-shared';
 import { environment } from '../../../environments/environment';
+import { of } from 'rxjs';
 
 const apiBaseUrl = environment.apiBaseUrl;
 const usersPath = `${apiBaseUrl}/users`;

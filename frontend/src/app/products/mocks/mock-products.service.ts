@@ -14,11 +14,13 @@ export class MockProductsService {
   updateProduct(id: string, product: Omit<Product, 'id'>) {
     const index = mockProducts.findIndex((p) => p.id.toString() === id);
     if (index !== -1) {
-      mockProducts[index] = {
-        id: parseInt(id, 10),
+      const updatedProduct = {
+        ...mockProducts[index],
         ...product,
+        version: (mockProducts[index].version || 0) + 1,
       };
-      return of(mockProducts[index]);
+      mockProducts[index] = updatedProduct;
+      return of(updatedProduct);
     } else {
       return of(null);
     }

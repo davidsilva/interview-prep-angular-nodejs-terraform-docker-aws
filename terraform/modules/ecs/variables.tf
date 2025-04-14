@@ -87,3 +87,13 @@ variable "backend_target_group_arn" {
     description = "The ARN of the backend target group to attach to the load balancer"
     type        = string
 }
+
+variable "cognito_user_pool_id" {
+    description = "The ID of the Cognito user pool"
+    type        = string
+}
+
+variable "cognito_client_id" {
+    description = "The ID of the Cognito client"
+    type        = string
+}

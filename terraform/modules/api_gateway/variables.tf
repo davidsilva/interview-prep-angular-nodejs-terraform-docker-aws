@@ -8,6 +8,11 @@ variable "region" {
   type        = string
 }
 
+variable "account_id" {
+  description = "The AWS account ID"
+  type        = string
+}
+
 variable "cloudwatch_role_arn" {
   description = "The ARN of the CloudWatch role"
   type        = string
@@ -25,5 +30,10 @@ variable "certificate_arn" {
 
 variable "cors_origin" {
   description = "The origin to allow CORS requests from"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "The ID of the VPC"
   type        = string
 }

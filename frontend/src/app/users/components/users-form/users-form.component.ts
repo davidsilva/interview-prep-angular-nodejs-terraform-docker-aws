@@ -44,6 +44,7 @@ import { MyErrorStateMatcher } from '../../../shared/utils/error-state-matcher';
 })
 export class UsersFormComponent {
   @Input() user: User | null = null;
+  @Input() loading: boolean = false;
   @Output() formSubmit = new EventEmitter<Omit<User, 'id'>>();
 
   fb = inject(NonNullableFormBuilder);

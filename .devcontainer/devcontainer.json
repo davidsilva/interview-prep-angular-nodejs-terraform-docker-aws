@@ -18,6 +18,7 @@
   // This allows the containers to communicate with each other using their service names,
   // which is useful for setting up a consistent development environment where services
   // like databases, APIs, and front-end applications can interact seamlessly.
+  // "runArgs": ["--init", "--privileged", "--network=interview-prep_devnetwork"],
   "runArgs": ["--init", "--privileged", "--network=interview-prep_devnetwork"],
   "remoteUser": "root",
   "mounts": [
@@ -37,11 +38,17 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "apt-get update && apt-get install -y chromium"
-  
+  "postCreateCommand": "apt-get update && apt-get install -y chromium rename",
 
   // Configure tool-specific properties.
-  // "customizations": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Angular.ng-template",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
 
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"

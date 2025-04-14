@@ -9,16 +9,18 @@ import { logger } from './middleware/logger';
 import knex from 'knex';
 import knexConfig from './knexFile';
 import { Request, Response, NextFunction } from 'express-serve-static-core';
+import { attachUserGroups } from './middleware/authMiddleware';
 
 const app = express();
 app.use(bodyParser.json());
 
 let corsOrigin: string;
 
+// It's problematic to set CORS options here *and* in the API Gateway. We can address that later.
 if (process.env['NODE_ENV'] === 'local') {
   corsOrigin = 'http://localhost:4200';
 } else {
-  corsOrigin = 'https://dev.interviewprep.onyxdevtutorials.com';
+  corsOrigin = '*';
 }
 
 const corsOptions = {
@@ -38,8 +40,9 @@ if (!app.get('db')) {
 }
 
 app.use(
-  '/api/v0/users',
-  (req: Request, res: Response, next: NextFunction) => {
+  '/users',
+  attachUserGroups(),
+  async (req: Request, res: Response, next: NextFunction) => {
     req.db = app.get('db');
     next();
   },
@@ -47,7 +50,8 @@ app.use(
 );
 
 app.use(
-  '/api/v0/products',
+  '/products',
+  attachUserGroups(),
   async (req: Request, res: Response, next: NextFunction) => {
     const db = app.get('db');
     req.db = db;

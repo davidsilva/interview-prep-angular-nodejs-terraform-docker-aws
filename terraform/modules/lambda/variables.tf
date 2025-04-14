@@ -33,31 +33,6 @@ variable "lambda_sg_id" {
   type        = string
 }
 
-variable "db_host_param" {
-  description = "SSM parameter name for the database host"
-  type        = string
-}
-
-variable "db_port_param" {
-  description = "SSM parameter name for the database port"
-  type        = string
-}
-
-variable "db_name_param" {
-  description = "SSM parameter name for the database name"
-  type        = string
-}
-
-variable "db_user_param" {
-  description = "SSM parameter name for the database user"
-  type        = string
-}
-
-variable "db_pass_param" {
-  description = "SSM parameter name for the database password"
-  type        = string
-}
-
 variable "lambda_exec_role_arn" {
   description = "ARN of the role for the lambda function"
   type        = string
@@ -71,4 +46,16 @@ variable "timeout" {
 variable "memory_size" {
   description = "Memory size for the lambda function"
   type        = number
+}
+
+variable "environment_variables" {
+  description = "Environment variables for the lambda function"
+  type        = map(string)
+  default = {}
+}
+
+variable "enable_logging" {
+  description = "Enable logging for the lambda function"
+  type        = bool
+  default     = false
 }

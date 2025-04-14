@@ -88,7 +88,15 @@ resource "aws_ecs_task_definition" "backend" {
                 {
                     name = "NODE_ENV"
                     value = "development"
-                }
+                },
+                {
+                    name = "COGNITO_USER_POOL_ID"
+                    value = var.cognito_user_pool_id
+                },
+                {
+                    name = "COGNITO_CLIENT_ID"
+                    value = var.cognito_client_id
+                },
             ]
             logConfiguration = {
                 logDriver = "awslogs"

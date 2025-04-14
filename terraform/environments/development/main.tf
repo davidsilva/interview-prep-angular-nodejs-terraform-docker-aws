@@ -66,6 +66,8 @@ module "ecs" {
   db_password = var.db_password
   frontend_target_group_arn = module.load_balancer.frontend_target_group_arn
   backend_target_group_arn = module.load_balancer.backend_target_group_arn
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id = module.cognito.user_pool_client_ids["web_app"]
 }
 
 module "iam" {
@@ -73,7 +75,23 @@ module "iam" {
   environment = var.environment
   account_id = var.account_id
   region     = var.region
-  github_repository = "davidsilva/interview-prep-angular-nodejs-terraform-docker-aws"
+}
+
+module "cognito" {
+  source = "../../modules/cognito"
+  environment = var.environment
+  project_name = var.project_name
+  region = var.region
+  account_id = var.account_id
+  api_gateway_rest_api_id = module.api_gateway.api_id
+  clients = {
+    web_app = {
+      client_name = "web-app-client"
+      callback_urls = ["https://dev.interviewprep.onyxdevtutorials.com/callback"]
+      logout_urls = ["https://dev.interviewprep.onyxdevtutorials.com/logout"]
+      generate_secret = false
+    }
+  }
 }
 
 module "ecr" {
@@ -113,12 +131,15 @@ module "lambda_migrate" {
   lambda_package = var.lambda_package_migrate
   lambda_subnet_ids = [module.subnets.private_subnet_a_id, module.subnets.private_subnet_b_id]
   lambda_sg_id = module.security_groups.lambda_sg_id
-  db_host_param = module.ssm_parameters.db_host_param
-  db_port_param = module.ssm_parameters.db_port_param
-  db_name_param = module.ssm_parameters.db_name_param
-  db_user_param = module.ssm_parameters.db_user_param
-  db_pass_param = module.ssm_parameters.db_pass_param
+  environment_variables = {
+    DB_HOST_PARAM = module.ssm_parameters.db_host_param
+    DB_PORT_PARAM = module.ssm_parameters.db_port_param
+    DB_NAME_PARAM = module.ssm_parameters.db_name_param
+    DB_USER_PARAM = module.ssm_parameters.db_user_param
+    DB_PASS_PARAM = module.ssm_parameters.db_pass_param
+  }
   lambda_exec_role_arn = module.iam.lambda_exec_role_arn
+  enable_logging = false
 }
 
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
@@ -176,5 +197,7 @@ module "api_gateway" {
   lb_dns_name = module.load_balancer.lb_dns_name
   region = var.region
   certificate_arn = var.certificate_arn
-  cors_origin = "https://dev.interviewprep.onyxdevtutorials.com"
+  cors_origin = "*"
+  account_id = var.account_id
+  vpc_id = module.vpc.vpc_id
 }
