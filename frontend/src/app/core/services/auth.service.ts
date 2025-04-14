@@ -6,7 +6,11 @@ import {
   ConfirmSignUpCommand,
   InitiateAuthCommand,
   RevokeTokenCommand,
+  RevokeTokenCommandOutput,
   SignUpCommand,
+  SignUpCommandOutput,
+  ConfirmSignUpCommandOutput,
+  InitiateAuthCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -61,7 +65,7 @@ export class AuthService {
     return this.token;
   }
 
-  async signUp(email: string, password: string): Promise<void> {
+  async signUp(email: string, password: string): Promise<SignUpCommandOutput> {
     const command = new SignUpCommand({
       ClientId: environment.cognitoClientId,
       Username: email,
@@ -84,6 +88,8 @@ export class AuthService {
         );
         // Could redirect to sign-up confirmation page.
       }
+
+      return response;
     } catch (error) {
       console.error('Error signing up:', error);
 
@@ -106,10 +112,8 @@ export class AuthService {
 
   async confirmSignUp(
     email: string,
-    confirmationCode: string,
-    autoSignIn: boolean,
-    password?: string
-  ): Promise<void> {
+    confirmationCode: string
+  ): Promise<ConfirmSignUpCommandOutput> {
     // Use ConfirmSignUpCommand
     const command = new ConfirmSignUpCommand({
       ClientId: environment.cognitoClientId,
@@ -118,20 +122,19 @@ export class AuthService {
     });
 
     try {
-      const response = await this.client.send(command);
-      console.log('Confirmation successful:', response);
-
-      if (autoSignIn && password) {
-        // Automatically sign in after confirmation
-        await this.signIn(email, password);
-      }
+      const confirmationResponse = await this.client.send(command);
+      console.log('Confirmation successful:', confirmationResponse);
+      return confirmationResponse;
     } catch (error) {
       console.error('Error confirming sign up:', error);
       throw error;
     }
   }
 
-  async signIn(email: string, password: string): Promise<void> {
+  async signIn(
+    email: string,
+    password: string
+  ): Promise<InitiateAuthCommandOutput> {
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: environment.cognitoClientId,
@@ -154,13 +157,16 @@ export class AuthService {
           localStorage.setItem('refreshToken', refreshToken);
         }
       }
+
+      return response;
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
     }
   }
 
-  async signOut(): Promise<void> {
+  async signOut(): Promise<RevokeTokenCommandOutput | null> {
+    let response: RevokeTokenCommandOutput | null = null;
     const refreshToken = localStorage.getItem('refreshToken');
 
     if (refreshToken) {
@@ -170,11 +176,13 @@ export class AuthService {
       });
 
       try {
-        await this.client.send(command);
+        response = await this.client.send(command);
         console.log('Refresh token revoked successfully.');
       } catch (error) {
-        console.error('Error revoking token: ', error);
+        console.error('Error revoking refresh token: ', error);
       }
+    } else {
+      console.warn('No refresh token found. Skipping revocation.');
     }
 
     localStorage.removeItem('authToken');
@@ -183,6 +191,9 @@ export class AuthService {
     this.isSignedInSubject.next(false);
     this.userGroupsSubject.next([]);
     this.isAdminSubject.next(false);
+
+    console.log('User signed out successfully.');
+    return response;
   }
 
   async refreshAuthToken(): Promise<void> {

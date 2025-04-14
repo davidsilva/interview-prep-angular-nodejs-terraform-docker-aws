@@ -45,36 +45,38 @@ fdescribe('AuthService', () => {
     expect(service).toBeTruthy();
   });
 
-  // describe('SignUp()', () => {
-  //   it('should call CognitoIdentityProviderClient with SignUpCommand and succeed', async () => {
-  //     cognitoMock.on(SignUpCommand).resolves({
-  //       $metadata: {
-  //         httpStatusCode: 200,
-  //       },
-  //       UserConfirmed: true,
-  //       CodeDeliveryDetails: {
-  //         Destination: 'test@example.com',
-  //         DeliveryMedium: 'EMAIL',
-  //         AttributeName: 'email',
-  //       },
-  //       UserSub: 'mockUserSub',
-  //     });
+  describe('SignUp()', () => {
+    it('should call CognitoIdentityProviderClient with SignUpCommand and succeed', async () => {
+      cognitoMock.on(SignUpCommand).resolves({
+        $metadata: {
+          httpStatusCode: 200,
+        },
+        UserConfirmed: true,
+        CodeDeliveryDetails: {
+          Destination: 'test@example.com',
+          DeliveryMedium: 'EMAIL',
+          AttributeName: 'email',
+        },
+        UserSub: 'mockUserSub',
+      });
 
-  //     await service.signUp('test@example.com', 'password123');
+      await service.signUp('test@example.com', 'password123');
 
-  //     const calls = cognitoMock.calls();
+      const calls = cognitoMock.calls();
 
-  //     expect(calls.length).toBe(1);
+      const input = calls[0].args[0].input as SignUpCommandInput;
 
-  //     // const commandInput = calls[0].args[0] as SignUpCommandInput;
+      expect(calls.length).toBe(1);
 
-  //     // expect(calls[0].args[0]).toEqual({
-  //     //   ClientId: environment.cognitoClientId,
-  //     //   Username: 'test@example.com',
-  //     //   Password: 'password123',
-  //     // });
-  //   });
-  // });
+      expect(input).toEqual(
+        jasmine.objectContaining({
+          ClientId: environment.cognitoClientId,
+          Username: 'test@example.com',
+          Password: 'password123',
+        })
+      );
+    });
+  });
 
   // describe('confirmSignUp()', () => {});
 
